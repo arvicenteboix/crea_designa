@@ -10,11 +10,17 @@ import pandas as pd
 from docx import Document
 from docx.shared import Cm, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_ALIGN_VERTICAL
+from docx.enum.table import WD_ALIGN_VERTICAL, WD_ROW_HEIGHT_RULE
 from tkinter import messagebox
 from num2words import num2words
 import re
 from datetime import datetime
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
+import sys
+
+
+
 # from docx2pdf import convert
 
 def resource_path(relative_path):
@@ -912,6 +918,7 @@ def minuta_skills(datos, identificativos, parent=None):
     curso = identificativos.get('TÍTULO ACCIÓN FORMATIVA / TÍTOL ACCIÓ FORMATIVA', '') or ''
     codigo = identificativos.get('CÓDIGO EDICIÓN / CODI EDICIÓ', '') or ''
     nombre_curso_prefill = f"{codigo} - {curso}".strip(" -")
+    dates = identificativos.get('FECHAS REALIZACIÓN / DATES REALITZACIÓ', '') or ''
 
     # Ventana
     top = tk.Toplevel(master=parent)
@@ -983,6 +990,13 @@ def minuta_skills(datos, identificativos, parent=None):
 
     # Campos por persona
     for idx, persona in enumerate(personas, 1):
+        # Solo procesar si todos los movimientos son 'minuta'
+        movs = persona.get('Movimientos', [])
+        if not all(
+            str(mov.get('MINUTA / DIETA / FACTURA/ MATERIAL', '')).strip().lower() == 'minuta'
+            for mov in movs
+        ):
+            continue
         movs = persona.get("Movimientos", [])
         total = round(sum(to_float(mov.get('IMPORTE / IMPORT (€)', 0)) for mov in movs), 2)
         bruto = round(total * 0.85, 2)  # total - 15%
@@ -1004,6 +1018,12 @@ def minuta_skills(datos, identificativos, parent=None):
             "Importe neto (total)": tk.StringVar(value=f"{neto:.2f}"),
             "IBAN": tk.StringVar(value=""),
             "BIC": tk.StringVar(value=""),
+            "Email": tk.StringVar(value=""),
+            "Teléfono": tk.StringVar(value=""),
+            "Grup": tk.StringVar(value=""),
+            "Nivell": tk.StringVar(value=""),
+            "Relacio_juridica": tk.StringVar(value=""),
+            "Dates_inici_final": tk.StringVar(value=dates),
         }
 
         entry_vars.append(vars_map)
@@ -1016,7 +1036,7 @@ def minuta_skills(datos, identificativos, parent=None):
             tk.Label(lf, text=label + ":").grid(row=r, column=c, sticky="e", padx=5, pady=4)
             e = tk.Entry(lf, textvariable=vars_map[label], width=40)
             e.grid(row=r, column=c + 1, sticky="w", padx=5, pady=4)
-
+    '''
     def recopilar_datos():
         salida = []
         for vm in entry_vars:
@@ -1037,12 +1057,395 @@ def minuta_skills(datos, identificativos, parent=None):
             show_json(json.dumps(salida, ensure_ascii=False, indent=2))
         except Exception:
             print(json.dumps(salida, ensure_ascii=False, indent=2))
-
+    '''
+    def recopilar_y_crear():
+        datos_recopilados = []
+        for vm in entry_vars:
+            datos_recopilados.append({
+                "Nombre": vm["Nombre y Apellidos"].get(),
+                "NIF": vm["NIF"].get(),
+                "Domicili": vm["Domicilio"].get(),
+                "CP": vm["CP"].get(),
+                "Población": vm["Población"].get(),
+                "Provincia": vm["Provincia"].get(),
+                "Nombre del curso": vm["Nombre del curso"].get(),
+                "Importe bruto": vm["Importe bruto (total - 15%)"].get(),
+                "Importe neto": vm["Importe neto (total)"].get(),
+                "IBAN": vm["IBAN"].get(),
+                "BIC": vm["BIC"].get(),
+                "Email": vm["Email"].get() if "Email" in vm else "",
+                "Teléfono": vm["Teléfono"].get() if "Teléfono" in vm else (vm["Telefono"].get() if "Telefono" in vm else ""),
+                "Grup": vm["Grup"].get() if "Grup" in vm else "",
+                "Nivell": vm["Nivell"].get() if "Nivell" in vm else "",
+                "Relacio_juridica": vm["Relacio_juridica"].get() if "Relacio_juridica" in vm else "",
+                "Dates_inici_final": vm["Dates_inici_final"].get() if "Dates_inici_final" in vm else "",
+            })
+        crea_minuta_skills_docx(datos_recopilados)
+    
     btn_frame = tk.Frame(top)
     btn_frame.pack(fill="x", padx=10, pady=10)
-    tk.Button(btn_frame, text="Ver JSON", command=recopilar_datos).pack(side="left", padx=5)
+    tk.Button(btn_frame, text="Crear minutas", command=recopilar_y_crear).pack(side="left", padx=5)
     tk.Button(btn_frame, text="Cerrar", command=on_close).pack(side="right", padx=5)
 
+def crea_minuta_skills_docx(dades):
+    def crea_docx(datos):
+        doc = Document()
+        section = doc.sections[0]
+        section.top_margin = Cm(0.8)
+        section.bottom_margin = Cm(0.1)
+        section.footer_distance = Cm(0.1)
+
+        
+
+
+        imagen_path = resource_path('a.png')
+        
+        # imagen_path = "./a.png"
+        doc.add_picture(imagen_path, width=Cm(15.0))
+
+        estilo = doc.styles['Normal']
+        fuente = estilo.font
+        fuente.name = 'Calibri'
+        fuente.size = Pt(13)
+
+        encabezado = doc.add_paragraph()
+        encabezado.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        encabezado.add_run("GRATIFICACIÓ PER ACTIVITAT DOCENT")
+        encabezado.runs[0].bold = True
+        encabezado.runs[0].font.size = Pt(14)
+
+            # TABLA DE DATOS DEL PERCEPTOR/A
+        tabla = doc.add_table(rows=8, cols=6)
+        # tabla.autofit = True
+        for row in tabla.rows:
+            row.height = Cm(0.8)
+            row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+        # Borde externo doble y sin bordes internos
+
+        tbl = tabla._tbl
+        tblPr = tbl.tblPr
+        
+        if tblPr is None:
+            tblPr = parse_xml(r'<w:tblPr %s/>' % nsdecls('w'))
+            tbl.append(tblPr)
+
+        borders = parse_xml(r'''
+            <w:tblBorders %s>
+            <w:top w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:left w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:bottom w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:right w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:insideH w:val="nil"/>
+            <w:insideV w:val="nil"/>
+            </w:tblBorders>
+        ''' % nsdecls('w'))
+        tblPr.append(borders)
+
+        # Unir las celdas de la primera fila desde la segunda hasta la última
+        primera_fila = tabla.rows[0]
+        celda_merged = primera_fila.cells[0]
+        for i in range(1, len(primera_fila.cells)):
+            celda_merged = celda_merged.merge(primera_fila.cells[i])
+
+        run = primera_fila.cells[0].paragraphs[0].add_run("DADES DEL PERCEPTOR/A")
+        run.underline = True
+        run.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        primera_fila.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+       
+
+        segona_fila = tabla.rows[1]
+        celda_merged = segona_fila.cells[0]
+        for i in range(1, len(segona_fila.cells)):
+            celda_merged = celda_merged.merge(segona_fila.cells[i])
+
+        segona_fila.height = Cm(0.2)
+        segona_fila.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+        
+
+        tercera_fila = tabla.rows[2]
+        run2 = tercera_fila.cells[0].paragraphs[0].add_run("NOM I COGNOMS")
+        run2.bold = True
+
+        celda_merged = tercera_fila.cells[0]
+        for i in range(0, 2):
+            celda_merged = celda_merged.merge(tercera_fila.cells[i])
+
+
+        tercera_fila.cells[2].paragraphs[0].text = datos["Nombre"]
+        tercera_fila.cells[2].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+        celda_merged = tercera_fila.cells[2]
+        for i in range(3, len(tercera_fila.cells)):
+            celda_merged = celda_merged.merge(tercera_fila.cells[i])
+
+        cuarta_fila = tabla.rows[3]
+        celda_merged = cuarta_fila.cells[0]
+        for i in range(1, len(cuarta_fila.cells)):
+            celda_merged = celda_merged.merge(cuarta_fila.cells[i])
+
+        cuarta_fila.height = Cm(0.2)
+        cuarta_fila.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+
+
+        quinta_fila = tabla.rows[4]
+        # NIF | <nif> | Email | <email> | Telèfon | <tel>
+        run_nif = quinta_fila.cells[0].paragraphs[0].add_run("NIF")
+        run_nif.bold = True
+        quinta_fila.cells[1].paragraphs[0].text = str(datos.get("NIF", ""))
+
+        run_email = quinta_fila.cells[2].paragraphs[0].add_run("Email")
+        run_email.bold = True
+        quinta_fila.cells[3].paragraphs[0].text = str(
+            datos.get("Email", datos.get("Correo electrónico", datos.get("Correo", "")))
+        )
+
+        run_tel = quinta_fila.cells[4].paragraphs[0].add_run("Telèfon")
+        run_tel.bold = True
+        quinta_fila.cells[5].paragraphs[0].text = str(
+            datos.get("Telèfon", datos.get("Teléfono", datos.get("Telefono", "")))
+        )
+        
+
+
+        sexta_fila = tabla.rows[5]
+        run_grup = sexta_fila.cells[0].paragraphs[0].add_run("GRUP")
+        run_grup.bold = True
+        sexta_fila.cells[1].paragraphs[0].text = str(datos.get("Grup", ""))
+
+        run_nivell = sexta_fila.cells[2].paragraphs[0].add_run("NIVELL")
+        run_nivell.bold = True
+        sexta_fila.cells[3].paragraphs[0].text = str(datos.get("Nivell", ""))
+
+        run_relacion = sexta_fila.cells[4].paragraphs[0].add_run("RELACIÓ JURÍDICA")
+        run_relacion.bold = True
+        sexta_fila.cells[5].paragraphs[0].text = str(datos.get("Relacio_juridica", ""))
+
+        sexta_fila.height = Cm(1.3)
+        sexta_fila.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+
+        septima_fila = tabla.rows[6]
+
+        celda_merged = septima_fila.cells[2]
+        for i in range(3, len(septima_fila.cells)):
+            celda_merged = celda_merged.merge(septima_fila.cells[i])
+
+        
+        run_domicilio = septima_fila.cells[0].paragraphs[0].add_run("DOMICILI")
+        run_domicilio.bold = True
+        septima_fila.cells[1].paragraphs[0].text = str(datos.get("Domicili", ""))
+
+
+        # Octava fila: CP, POBLACIÓ, PROVÍNCIA
+        octava_fila = tabla.rows[7]
+        run_cp = octava_fila.cells[0].paragraphs[0].add_run("CP")
+        run_cp.bold = True
+        octava_fila.cells[1].paragraphs[0].text = str(datos.get("CP", ""))
+
+        run_poblacio = octava_fila.cells[2].paragraphs[0].add_run("POBLACIÓ")
+        run_poblacio.bold = True
+        octava_fila.cells[3].paragraphs[0].text = str(datos.get("Población", ""))
+
+        run_provincia = octava_fila.cells[4].paragraphs[0].add_run("PROVÍNCIA")
+        run_provincia.bold = True
+        octava_fila.cells[5].paragraphs[0].text = str(datos.get("Provincia", ""))
+
+        #####
+
+        doc.add_paragraph("")
+
+        ####
+
+        # TABLA DE DATOS ECONÓMICOS DEL PERCEPTOR/A
+        tabla = doc.add_table(rows=6, cols=6)
+        # tabla.autofit = True
+        for row in tabla.rows:
+            row.height = Cm(0.8)
+            row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+        # Borde externo doble y sin bordes internos
+
+        tbl = tabla._tbl
+        tblPr = tbl.tblPr
+        
+        if tblPr is None:
+            tblPr = parse_xml(r'<w:tblPr %s/>' % nsdecls('w'))
+            tbl.append(tblPr)
+
+        borders = parse_xml(r'''
+            <w:tblBorders %s>
+            <w:top w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:left w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:bottom w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:right w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:insideH w:val="nil"/>
+            <w:insideV w:val="nil"/>
+            </w:tblBorders>
+        ''' % nsdecls('w'))
+        tblPr.append(borders)
+
+        # Unir las celdas de la primera fila desde la segunda hasta la última
+        primera_fila = tabla.rows[0]
+        celda_merged = primera_fila.cells[0]
+        for i in range(1, len(primera_fila.cells)):
+            celda_merged = celda_merged.merge(primera_fila.cells[i])
+
+        run = primera_fila.cells[0].paragraphs[0].add_run("DADES ECONÒMIQUES")
+        run.underline = True
+        run.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        primera_fila.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+       
+
+        segona_fila = tabla.rows[1]
+        run2 = segona_fila.cells[0].paragraphs[0].add_run("DESCRIPCIÓ DE L’ACTIVITAT: ")
+        run2.bold = True
+
+        celda_merged = segona_fila.cells[0]
+        for i in range(0, len(segona_fila.cells)):
+            celda_merged = celda_merged.merge(segona_fila.cells[i])
+
+        tercera_fila = tabla.rows[2]
+        tercera_fila.cells[1].paragraphs[0].text = datos["Nombre del curso"]
+
+        celda_merged = tercera_fila.cells[0]
+        for i in range(0, len(tercera_fila.cells)):
+            celda_merged = celda_merged.merge(tercera_fila.cells[i])
+
+        cuarta_fila = tabla.rows[3]
+        cuarta_fila.cells[0].paragraphs[0].add_run("DATA:")
+        cuarta_fila.cells[0].paragraphs[0].runs[0].bold = True
+        cuarta_fila.cells[1].paragraphs[0].text = str(datos.get("Dates_inici_final", ""))
+        celda_merged = cuarta_fila.cells[1]
+        for i in range(2, len(cuarta_fila.cells)):
+            celda_merged = celda_merged.merge(cuarta_fila.cells[i])
+
+
+        quinta_fila = tabla.rows[4]
+        quinta_fila.cells[0].paragraphs[0].add_run("IMPORT BRUT:")
+        celda_merged = quinta_fila.cells[0]
+        for i in range(1, 2):
+            celda_merged = celda_merged.merge(quinta_fila.cells[i])
+        quinta_fila.cells[0].paragraphs[0].runs[0].bold = True
+        quinta_fila.cells[2].paragraphs[0].text = str(datos.get("Importe bruto", "")) + " €"
+        celda_merged = quinta_fila.cells[2]
+        for i in range(3, len(quinta_fila.cells)):
+            celda_merged = celda_merged.merge(quinta_fila.cells[i])
+
+
+        sexta_fila = tabla.rows[5]
+        sexta_fila.cells[0].paragraphs[0].add_run("IMPORT NET:")
+        celda_merged = sexta_fila.cells[0]
+        for i in range(1, 2):
+            celda_merged = celda_merged.merge(sexta_fila.cells[i])
+        sexta_fila.cells[0].paragraphs[0].runs[0].bold = True
+        sexta_fila.cells[2].paragraphs[0].text = str(datos.get("Importe neto", "")) + " €"
+        celda_merged = sexta_fila.cells[2]
+        for i in range(3, len(sexta_fila.cells)):
+            celda_merged = celda_merged.merge(sexta_fila.cells[i])
+
+
+
+        ###########################################
+
+        doc.add_paragraph("")
+        
+
+        ####
+
+        # TABLA DE DATOS bancarios DEL PERCEPTOR/A
+        tabla = doc.add_table(rows=3, cols=6)
+        # tabla.autofit = True
+        for row in tabla.rows:
+            row.height = Cm(0.9)
+            row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+        # Borde externo doble y sin bordes internos
+
+        tbl = tabla._tbl
+        tblPr = tbl.tblPr
+        
+        if tblPr is None:
+            tblPr = parse_xml(r'<w:tblPr %s/>' % nsdecls('w'))
+            tbl.append(tblPr)
+
+        borders = parse_xml(r'''
+            <w:tblBorders %s>
+            <w:top w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:left w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:bottom w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:right w:val="double" w:sz="12" w:space="0" w:color="000000"/>
+            <w:insideH w:val="nil"/>
+            <w:insideV w:val="nil"/>
+            </w:tblBorders>
+        ''' % nsdecls('w'))
+        tblPr.append(borders)
+
+        # Unir las celdas de la primera fila desde la segunda hasta la última
+        primera_fila = tabla.rows[0]
+        celda_merged = primera_fila.cells[0]
+        for i in range(1, len(primera_fila.cells)):
+            celda_merged = celda_merged.merge(primera_fila.cells[i])
+
+        run = primera_fila.cells[0].paragraphs[0].add_run("DADES BANCÀRIES")
+        run.underline = True
+        run.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        primera_fila.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+       
+
+        segona_fila = tabla.rows[1]
+        run = segona_fila.cells[0].paragraphs[0].add_run("IBAN:")
+        run.bold = True
+
+
+        celda_merged = segona_fila.cells[1]
+        for i in range(1, len(segona_fila.cells)):
+            celda_merged = celda_merged.merge(segona_fila.cells[i])
+        
+        segona_fila.cells[1].paragraphs[0].text = str(datos.get("IBAN", ""))
+
+        tercera_fila = tabla.rows[2]
+        run = tercera_fila.cells[0].paragraphs[0].add_run("BIC:")
+        run.bold = True
+        tercera_fila.cells[1].paragraphs[0].text = str(datos.get("BIC", ""))
+        celda_merged = tercera_fila.cells[1]
+        for i in range(2, len(tercera_fila.cells)):
+            celda_merged = celda_merged.merge(tercera_fila.cells[i])
+
+        ####################################
+
+        doc.add_paragraph("Declare que he realitzat la citada activitat en la data que s'assenyala.")
+
+        doc.add_paragraph("")
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.add_run("(firma digital)")
+
+        # Pie de página
+        footer = doc.sections[0].footer
+        footer_paragraph = footer.add_paragraph()
+        footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = footer_paragraph.add_run("CONSELLERIA D'EDUCACIÓ, CULTURA, UNIVERSITATS I OCUPACIÓ\n")
+        run.font.size = Pt(7)
+        run = footer_paragraph.add_run("Av. Campanar, 32. 46015 - València. CIF S4611001A\n")
+        run.font.size = Pt(7)
+        run = footer_paragraph.add_run("DIRECCIÓ GENERAL DE FORMACIÓ PROFESSIONAL")
+        run.font.size = Pt(7)
+
+
+
+        #####################################
+        # fila.cells[1].text = 
+        doc_name = f"MINUTA_{datos['Nombre'].replace(' ', '_')}.docx"
+
+        doc.save(doc_name)
+
+        try:
+            messagebox.showinfo("Documento generado", f"✅ Se ha creado '{doc_name}' correctamente.")
+        except Exception:
+            print("Documento generado correctamente")
+    
+    for dato in dades:
+         crea_docx(dato)
+
+
+    
 
 
 def main():
@@ -1052,7 +1455,7 @@ def main():
     root.title("GENERA DESIGNAS")
     # Centrar la ventana en la pantalla
     window_width = 400
-    window_height = 250
+    window_height = 300
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = int((screen_width / 2) - (window_width / 2))
