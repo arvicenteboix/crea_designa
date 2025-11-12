@@ -18,6 +18,7 @@ from datetime import datetime
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 import sys
+from tkinter import ttk
 
 
 
@@ -999,8 +1000,8 @@ def minuta_skills(datos, identificativos, parent=None):
             continue
         movs = persona.get("Movimientos", [])
         total = round(sum(to_float(mov.get('IMPORTE / IMPORT (€)', 0)) for mov in movs), 2)
-        bruto = round(total * 0.85, 2)  # total - 15%
-        neto = round(total, 2)
+        neto = round(total * 0.85, 2)  # total - 15%
+        bruto = round(total, 2)
 
         lf = tk.LabelFrame(scroll_frame, text=f"Persona {idx}", padx=10, pady=10)
         lf.pack(fill="x", padx=10, pady=8)
@@ -1014,15 +1015,15 @@ def minuta_skills(datos, identificativos, parent=None):
             "Población": tk.StringVar(value=""),
             "Provincia": tk.StringVar(value=""),
             "Nombre del curso": tk.StringVar(value=nombre_curso_prefill),
-            "Importe bruto (total - 15%)": tk.StringVar(value=f"{bruto:.2f}"),
-            "Importe neto (total)": tk.StringVar(value=f"{neto:.2f}"),
+            "Importe bruto": tk.StringVar(value=f"{bruto:.2f}"),
+            "Importe neto": tk.StringVar(value=f"{neto:.2f}"),
             "IBAN": tk.StringVar(value=""),
             "BIC": tk.StringVar(value=""),
             "Email": tk.StringVar(value=""),
             "Teléfono": tk.StringVar(value=""),
             "Grup": tk.StringVar(value=""),
             "Nivell": tk.StringVar(value=""),
-            "Relacio_juridica": tk.StringVar(value=""),
+            "Relacio_juridica": tk.StringVar(value="FI"),
             "Dates_inici_final": tk.StringVar(value=dates),
         }
 
@@ -1036,6 +1037,11 @@ def minuta_skills(datos, identificativos, parent=None):
             tk.Label(lf, text=label + ":").grid(row=r, column=c, sticky="e", padx=5, pady=4)
             e = tk.Entry(lf, textvariable=vars_map[label], width=40)
             e.grid(row=r, column=c + 1, sticky="w", padx=5, pady=4)
+            if label == "Relacio_juridica":
+                combo = ttk.Combobox(lf, textvariable=vars_map[label], values=["FI", "FC"], state="readonly", width=37)
+                combo.grid(row=r, column=c + 1, sticky="w", padx=5, pady=4)
+
+
     '''
     def recopilar_datos():
         salida = []
@@ -1048,8 +1054,8 @@ def minuta_skills(datos, identificativos, parent=None):
                 "poblacion": vm["Población"].get(),
                 "provincia": vm["Provincia"].get(),
                 "curso": vm["Nombre del curso"].get(),
-                "importe_bruto": vm["Importe bruto (total - 15%)"].get(),
-                "importe_neto": vm["Importe neto (total)"].get(),
+                "importe_bruto": vm["Importe bruto"].get(),
+                "importe_neto": vm["Importe neto (bruto - 15%)"].get(),
                 "iban": vm["IBAN"].get(),
                 "bic": vm["BIC"].get(),
             })
@@ -1165,18 +1171,9 @@ def crea_minuta_skills_docx(dades):
         tercera_fila = tabla.rows[2]
         run2 = tercera_fila.cells[0].paragraphs[0].add_run("NOM I COGNOMS")
         run2.bold = True
+        run3 = tercera_fila.cells[0].paragraphs[0].add_run(str(datos.get("Nombre", "")))
+        run3.bold = False
 
-        celda_merged = tercera_fila.cells[0]
-        for i in range(0, 2):
-            celda_merged = celda_merged.merge(tercera_fila.cells[i])
-
-
-        tercera_fila.cells[2].paragraphs[0].text = datos["Nombre"]
-        tercera_fila.cells[2].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
-
-        celda_merged = tercera_fila.cells[2]
-        for i in range(3, len(tercera_fila.cells)):
-            celda_merged = celda_merged.merge(tercera_fila.cells[i])
 
         cuarta_fila = tabla.rows[3]
         celda_merged = cuarta_fila.cells[0]
@@ -1191,20 +1188,20 @@ def crea_minuta_skills_docx(dades):
         # NIF | <nif> | Email | <email> | Telèfon | <tel>
         run_nif = quinta_fila.cells[0].paragraphs[0].add_run("NIF")
         run_nif.bold = True
-        quinta_fila.cells[1].paragraphs[0].text = str(datos.get("NIF", ""))
+        run_nif2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("NIF", datos.get("DNI", datos.get("NIF/NIE", "")))))
+        run_nif2.bold = False
 
         run_email = quinta_fila.cells[2].paragraphs[0].add_run("Email")
         run_email.bold = True
-        quinta_fila.cells[3].paragraphs[0].text = str(
-            datos.get("Email", datos.get("Correo electrónico", datos.get("Correo", "")))
-        )
+        run_email2 = quinta_fila.cells[3].paragraphs[0].add_run(str(datos.get("Email", datos.get("Correo electrónico", datos.get("Correo", "")))))
+        run_email2.bold = False
 
         run_tel = quinta_fila.cells[4].paragraphs[0].add_run("Telèfon")
         run_tel.bold = True
-        quinta_fila.cells[5].paragraphs[0].text = str(
+        run_tel2 = quinta_fila.cells[5].paragraphs[0].add_run(str(
             datos.get("Telèfon", datos.get("Teléfono", datos.get("Telefono", "")))
-        )
-        
+        ))
+        run_tel2.bold = False
 
 
         sexta_fila = tabla.rows[5]
@@ -1230,24 +1227,28 @@ def crea_minuta_skills_docx(dades):
             celda_merged = celda_merged.merge(septima_fila.cells[i])
 
         
-        run_domicilio = septima_fila.cells[0].paragraphs[0].add_run("DOMICILI")
+        run_domicilio = septima_fila.cells[0].paragraphs[0].add_run("DOMICILI: ")
         run_domicilio.bold = True
-        septima_fila.cells[1].paragraphs[0].text = str(datos.get("Domicili", ""))
+        run_domicilio2 = septima_fila.cells[0].paragraphs[0].add_run(str(datos.get("Domicili", "")))
+        run_domicilio2.bold = False
 
 
         # Octava fila: CP, POBLACIÓ, PROVÍNCIA
         octava_fila = tabla.rows[7]
-        run_cp = octava_fila.cells[0].paragraphs[0].add_run("CP")
+        run_cp = octava_fila.cells[0].paragraphs[0].add_run("CP: ")
         run_cp.bold = True
-        octava_fila.cells[1].paragraphs[0].text = str(datos.get("CP", ""))
+        run_cp2 = octava_fila.cells[0].paragraphs[0].add_run(str(datos.get("CP", "")))
+        run_cp2.bold = False
 
-        run_poblacio = octava_fila.cells[2].paragraphs[0].add_run("POBLACIÓ")
+        run_poblacio = octava_fila.cells[2].paragraphs[0].add_run("POBLACIÓ: ")
         run_poblacio.bold = True
-        octava_fila.cells[3].paragraphs[0].text = str(datos.get("Población", ""))
+        run_poblacio2 = octava_fila.cells[2].paragraphs[0].add_run(str(datos.get("Población", "")))
+        run_poblacio2.bold = False
 
-        run_provincia = octava_fila.cells[4].paragraphs[0].add_run("PROVÍNCIA")
+        run_provincia = octava_fila.cells[4].paragraphs[0].add_run("PROVÍNCIA: ")
         run_provincia.bold = True
-        octava_fila.cells[5].paragraphs[0].text = str(datos.get("Provincia", ""))
+        run_provincia2 = octava_fila.cells[4].paragraphs[0].add_run(str(datos.get("Provincia", "")))
+        run_provincia2.bold = False
 
         #####
 
@@ -1310,36 +1311,23 @@ def crea_minuta_skills_docx(dades):
             celda_merged = celda_merged.merge(tercera_fila.cells[i])
 
         cuarta_fila = tabla.rows[3]
-        cuarta_fila.cells[0].paragraphs[0].add_run("DATA:")
+        cuarta_fila.cells[0].paragraphs[0].add_run("DATA: ")
         cuarta_fila.cells[0].paragraphs[0].runs[0].bold = True
-        cuarta_fila.cells[1].paragraphs[0].text = str(datos.get("Dates_inici_final", ""))
-        celda_merged = cuarta_fila.cells[1]
-        for i in range(2, len(cuarta_fila.cells)):
-            celda_merged = celda_merged.merge(cuarta_fila.cells[i])
-
+        run2 = cuarta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Dates_inici_final", "")))
+        run2.bold = False
 
         quinta_fila = tabla.rows[4]
-        quinta_fila.cells[0].paragraphs[0].add_run("IMPORT BRUT:")
-        celda_merged = quinta_fila.cells[0]
-        for i in range(1, 2):
-            celda_merged = celda_merged.merge(quinta_fila.cells[i])
-        quinta_fila.cells[0].paragraphs[0].runs[0].bold = True
-        quinta_fila.cells[2].paragraphs[0].text = str(datos.get("Importe bruto", "")) + " €"
-        celda_merged = quinta_fila.cells[2]
-        for i in range(3, len(quinta_fila.cells)):
-            celda_merged = celda_merged.merge(quinta_fila.cells[i])
+        quinta_fila.cells[0].paragraphs[0].add_run("IMPORT BRUT: ")
+        run2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Importe bruto", "")))
+        run2.bold = False
 
 
         sexta_fila = tabla.rows[5]
-        sexta_fila.cells[0].paragraphs[0].add_run("IMPORT NET:")
-        celda_merged = sexta_fila.cells[0]
-        for i in range(1, 2):
-            celda_merged = celda_merged.merge(sexta_fila.cells[i])
+        sexta_fila.cells[0].paragraphs[0].add_run("IMPORT NET: ")
         sexta_fila.cells[0].paragraphs[0].runs[0].bold = True
-        sexta_fila.cells[2].paragraphs[0].text = str(datos.get("Importe neto", "")) + " €"
-        celda_merged = sexta_fila.cells[2]
-        for i in range(3, len(sexta_fila.cells)):
-            celda_merged = celda_merged.merge(sexta_fila.cells[i])
+        run2 = sexta_fila.cells[2].paragraphs[0].add_run(str(datos.get("Importe neto", "")) + " €")
+        run2.bold = False
+        
 
 
 
@@ -1441,11 +1429,72 @@ def crea_minuta_skills_docx(dades):
         except Exception:
             print("Documento generado correctamente")
     
+
+
+    import re
+
+    def validar_datos(campos):
+        errores = {}
+
+        # Solo texto (letras y espacios)
+        solo_texto = lambda s: bool(re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+", s.strip()))
+        # NIF: 8 números y 1 letra al final
+        nif_valido = lambda s: bool(re.fullmatch(r"\d{8}[A-Za-z]", s.strip()))
+        # CP: 5 cifras
+        cp_valido = lambda s: bool(re.fullmatch(r"\d{5}", s.strip()))
+        # Solo cifras (números con posible punto decimal)
+        solo_cifras = lambda s: bool(re.fullmatch(r"\d+(\.\d+)?", s.strip()))
+        # IBAN básico: letra-letra y seguido 2-30 dígitos/letras (validez formal)
+        iban_valido = lambda s: bool(re.fullmatch(r"[A-Z]{2}\d{2}[A-Z0-9]{10,30}", s.strip().replace(" ", "").upper()))
+        # Email básico
+        email_valido = lambda s: bool(re.fullmatch(r"[^@]+@[^@]+\.[^@]+", s.strip()))
+        # Teléfono: 9 cifras
+        telefono_valido = lambda s: bool(re.fullmatch(r"\d{9}", s.strip()))
+        # Texto y números (alfanumérico con espacios)
+        texto_numeros = lambda s: bool(re.fullmatch(r"[A-Za-z0-9ÁÉÍÓÚáéíóúÑñÜü\s\-\.\,\;\:\(\)\[\]\{\}\¿\?\¡\!\@\#\$\%\&\*\_\+\=\/\\\|\~]+", s.strip()))
+
+
+
+
+
+        # Validaciones
+        errores["Nombre y Apellidos"] = "" if solo_texto(campos.get("Nombre", "")) else "Solo texto permitido"
+        errores["NIF"] = "" if nif_valido(campos.get("NIF", "")) else "Debe tener 8 números y 1 letra"
+        errores["Domicili"] = "" if solo_texto(campos.get("Domicili", "")) else "Solo texto permitido"
+        errores["CP"] = "" if cp_valido(campos.get("CP", "")) else "Debe tener 5 cifras"
+        errores["Población"] = "" if solo_texto(campos.get("Población", "")) else "Solo texto permitido"
+        errores["Provincia"] = "" if solo_texto(campos.get("Provincia", "")) else "Solo texto permitido"
+        errores["Nombre del curso"] = "" if texto_numeros(campos.get("Nombre del curso", "")) else "Solo texto permitido"
+        errores["Importe bruto"] = "" if solo_cifras(campos.get("Importe bruto", "")) else "Solo cifras válidas"
+        errores["Importe neto"] = "" if solo_cifras(campos.get("Importe neto", "")) else "Solo cifras válidas"
+        errores["IBAN"] = "" if iban_valido(campos.get("IBAN", "")) else "IBAN inválido"
+        # BIC no definido: sin validación (puedes añadir)
+        errores["BIC"] = ""
+        errores["Email"] = "" if email_valido(campos.get("Email", "")) else "Email inválido"
+        errores["Teléfono"] = "" if telefono_valido(campos.get("Teléfono", "")) else "Debe tener 9 cifras"
+        # Campos sin validación o con opciones libres
+        errores["Grup"] = ""
+        errores["Nivell"] = ""
+        errores["Relacio_juridica"] = ""
+        errores["Dates_inici_final"] = ""
+
+        # Si todos los errores están vacíos, devolver {"ok": True}
+        if all(v == "" for v in errores.values()):
+            return {"ok": True}
+        else:
+            return {"ok": False, "errores": errores}
+
+
+
     for dato in dades:
-         crea_docx(dato)
+        validar_datos = validar_datos(dato)
+        if not validar_datos.get("ok", False):
+            messagebox.showwarning("Validación de datos", f"Errores de validación:\n{json.dumps(validar_datos, ensure_ascii=False, indent=2)}")
+            continue
+        else:
+            crea_docx(dato)
 
 
-    
 
 
 def main():
