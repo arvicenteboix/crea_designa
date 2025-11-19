@@ -437,7 +437,7 @@ def generar_documento(datos, identificativos, numero_a_letras=lambda x:str(x)):
 #     generar_documento(persona)
 
 
-def generar_skills(datos, identificativos, numero_a_letras=lambda x:str(x)):
+def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str(x)):
     doc = Document()
     section = doc.sections[0]
     section.top_margin = Cm(1.5)
@@ -560,7 +560,7 @@ def generar_skills(datos, identificativos, numero_a_letras=lambda x:str(x)):
         tarificacio = str(mov.get('TARIFICACIÓN APLICADA (€)', ''))
         # Traducción de concepte al valenciano
         if concepte == "síncrona":
-            concepte_val = "síncrona"
+            concepte_val = "formació síncrona"
             tarificacio = f"{tarificacio} €/hora"
         elif concepte == "elaboración de casos-actividades prácticas":
             concepte_val = "el·laboració de casos-activitats pràctiques"
@@ -632,7 +632,7 @@ def generar_skills(datos, identificativos, numero_a_letras=lambda x:str(x)):
     for mov in movimientos:
         concepte = str(mov.get("TIPO DE INTERVENCIÓN*/ TIPUS D'INTERVENCIÓ*", "")).strip().lower()
         if concepte == "síncrona":
-            concepte_val = "síncrona"
+            concepte_val = "formació síncrona"
         elif concepte == "elaboración de casos-actividades prácticas":
             concepte_val = "el·laboració de casos-activitats pràctiques"
         elif concepte == "tutorización":
@@ -640,12 +640,13 @@ def generar_skills(datos, identificativos, numero_a_letras=lambda x:str(x)):
         else:
             concepte_val = concepte
         conceptos_valenciano.append(concepte_val)
+        # G01090205GE00000.422C00.TE22000053
     doc.add_paragraph(
         "\n2. Aprovar el gasto per un import total de " +
         f"{importe_total} € en concepte de " +
         " i ".join(set(conceptos_valenciano)) +
         ", per la seua participació en l’activitat esmentada i per actuar fora de l’horari normal de treball. "
-        "Este import s’abonarà d’acord amb el Decret 24/1997, d’11 de febrer, i les seues modificacions posteriors, sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris, amb càrrec a l’aplicació pressupostària G01090205GE00000.422C00.TE22000053, del pressupost de la Generalitat Valenciana per a l’any 2025."
+        f"Este import s’abonarà d’acord amb el Decret 24/1997, d’11 de febrer, i les seues modificacions posteriors, sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris, amb càrrec a l’aplicació pressupostària {partida}, del pressupost de la Generalitat Valenciana per a l’any 2025."
     )
 
     doc.add_paragraph(
@@ -770,8 +771,6 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
         # Fondo gris claro para la cabecera
         tc = hdr_cells[i]._tc
         tcPr = tc.get_or_add_tcPr()
-        from docx.oxml import parse_xml
-        from docx.oxml.ns import nsdecls
         shd = parse_xml(r'<w:shd {} w:fill="D9D9D9"/>'.format(nsdecls('w')))
         tcPr.append(shd)
 
@@ -794,7 +793,7 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
         tarificacio = str(mov.get('TARIFICACIÓN APLICADA (€)', ''))
         # Traducción de concepte al valenciano
         if concepte == "síncrona":
-            concepte_val = "síncrona"
+            concepte_val = "formació síncrona"
             tarificacio = f"{tarificacio} €/hora"
         elif concepte == "elaboración de casos-actividades prácticas":
             concepte_val = "el·laboració de casos-activitats pràctiques"
@@ -866,7 +865,7 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
     for mov in movimientos:
         concepte = str(mov.get("TIPO DE INTERVENCIÓN*/ TIPUS D'INTERVENCIÓ*", "")).strip().lower()
         if concepte == "síncrona":
-            concepte_val = "síncrona"
+            concepte_val = "formació síncrona"
         elif concepte == "elaboración de casos-actividades prácticas":
             concepte_val = "el·laboració de casos-activitats pràctiques"
         elif concepte == "tutorización":
@@ -1521,6 +1520,9 @@ def main():
     es_skills = tk.BooleanVar()
     chk_es_skills = tk.Checkbutton(root, text="Es Skills", variable=es_skills)
     chk_es_skills.pack(pady=5)
+    es_erasmus = tk.BooleanVar()
+    chk_es_erasmus = tk.Checkbutton(root, text="Es fons ERASMUS", variable=es_erasmus)
+    chk_es_erasmus.pack(pady=5)
 
     def on_process(tipo, parent=root):
         global t
@@ -1543,6 +1545,9 @@ def main():
                 minuta_skills(datos=json_data, identificativos=hoja_excel, parent=root)
                 status_label.config(text="¡Proceso completado!")
             elif es_skills.get():
+                if es_erasmus.get():
+                    messagebox.showerror("Error", "La opción 'Es fons ERASMUS' no es compatible con 'Es Skills'.")
+                    return
                 for persona in json_data:
                     # Filtrar movimientos que contienen "minuta" en el campo 'MINUTA / DIETA / FACTURA/ MATERIAL'
                     # Solo generar documento si TODOS los movimientos son 'minuta'
@@ -1556,11 +1561,34 @@ def main():
                         for mov in persona.get('Movimientos', [])
                     ):
                         if t == "des":
-                            generar_skills(datos=persona, identificativos=hoja_excel)
+                            generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.TE22000053")
                         elif t == "cer":
                             generar_skills_certifica(datos=persona, identificativos=hoja_excel)
                 status_label.config(text="¡Proceso completado!")
                   # Salir después de generar skills si está seleccionado
+            elif es_erasmus.get():
+                if es_skills.get():
+                    messagebox.showerror("Error", "La opción 'Es fons ERASMUS' no es compatible con 'Es Skills'.")
+                    return
+                for persona in json_data:
+                    # Filtrar movimientos que contienen "minuta" en el campo 'MINUTA / DIETA / FACTURA/ MATERIAL'
+                    # Solo generar documento si TODOS los movimientos son 'minuta'
+                    # Si algún movimiento es "caso-actividad", lo convertimos a "minuta"
+                    for mov in persona.get('Movimientos', []):
+                        tipo = str(mov.get('MINUTA / DIETA / FACTURA/ MATERIAL', '')).strip().lower()
+                        if tipo == 'caso-actividad':
+                            mov['MINUTA / DIETA / FACTURA/ MATERIAL'] = 'minuta'
+                    if all(
+                        str(mov.get('MINUTA / DIETA / FACTURA/ MATERIAL', '')).strip().lower() == 'minuta'
+                        for mov in persona.get('Movimientos', [])
+                    ):
+                        # generar_documento(datos=persona, identificativos=hoja_excel)
+                        if t == "des":
+                            generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.OT23000000")
+                        elif t == "cer":
+                            generar_skills_certifica(datos=persona, identificativos=hoja_excel)
+                status_label.config(text="¡Proceso completado!")
+                  # Salir después de generar designas si no está seleccionado skills
             elif not es_skills.get():
                 for persona in json_data:
                     # Filtrar movimientos que contienen "minuta" en el campo 'MINUTA / DIETA / FACTURA/ MATERIAL'
