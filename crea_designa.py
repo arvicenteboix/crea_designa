@@ -551,7 +551,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
         if concepte == "síncrona":
             unitats = f"{unitats} hores"
         elif concepte == "elaboración de casos-actividades prácticas":
-            unitats = f"{unitats} unitats"
+            unitats = f"{unitats} casos"
         elif concepte == "tutorización":
             unitats = f"{unitats} setmanes"
         row[2].text = unitats
@@ -564,7 +564,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
             tarificacio = f"{tarificacio} €/hora"
         elif concepte == "elaboración de casos-actividades prácticas":
             concepte_val = "el·laboració de casos-activitats pràctiques"
-            tarificacio = f"{tarificacio} €/unitat"
+            tarificacio = f"{tarificacio} €/cas"
         elif concepte == "tutorización":
             concepte_val = "tutorització"
             tarificacio = f"{tarificacio} €/setmana"
@@ -637,6 +637,8 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
             concepte_val = "el·laboració de casos-activitats pràctiques"
         elif concepte == "tutorización":
             concepte_val = "tutorització"
+        elif concepte == "ponente":
+            concepte_val = "ponent"
         else:
             concepte_val = concepte
         conceptos_valenciano.append(concepte_val)
@@ -803,7 +805,7 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
             tarificacio = f"{tarificacio} €/setmana"
         elif concepte == "ponente":
             concepte_val = "ponent"
-            tarificacio = f"{tarificacio} €/hora"
+            tarificacio = f"{tarificacio} €/hora"   
         else:
             concepte_val = concepte
         row[3].text = concepte_val
@@ -1039,6 +1041,10 @@ def minuta_skills(datos, identificativos, parent=None):
             if label == "Relacio_juridica":
                 combo = ttk.Combobox(lf, textvariable=vars_map[label], values=["FI", "FC"], state="readonly", width=37)
                 combo.grid(row=r, column=c + 1, sticky="w", padx=5, pady=4)
+            if label == "Nivell":
+                combo = ttk.Combobox(lf, textvariable=vars_map[label], values=["A26", "A24", "No aplica"], state="readonly", width=37)
+                combo.current(1)  # Selecciona "A24" por defecto (índice 1)
+                combo.grid(row=r, column=c + 1, sticky="w", padx=5, pady=4)
 
 
     '''
@@ -1074,8 +1080,8 @@ def minuta_skills(datos, identificativos, parent=None):
                 "Población": vm["Población"].get(),
                 "Provincia": vm["Provincia"].get(),
                 "Nombre del curso": vm["Nombre del curso"].get(),
-                "Importe bruto": vm["Importe bruto (total - 15%)"].get(),
-                "Importe neto": vm["Importe neto (total)"].get(),
+                "Importe bruto": vm["Importe bruto"].get(),
+                "Importe neto": vm["Importe neto"].get(),
                 "IBAN": vm["IBAN"].get(),
                 "BIC": vm["BIC"].get(),
                 "Email": vm["Email"].get() if "Email" in vm else "",
@@ -1085,14 +1091,14 @@ def minuta_skills(datos, identificativos, parent=None):
                 "Relacio_juridica": vm["Relacio_juridica"].get() if "Relacio_juridica" in vm else "",
                 "Dates_inici_final": vm["Dates_inici_final"].get() if "Dates_inici_final" in vm else "",
             })
-        crea_minuta_skills_docx(datos_recopilados)
+        crea_minuta_skills_docx(datos_recopilados, identificativos)
     
     btn_frame = tk.Frame(top)
     btn_frame.pack(fill="x", padx=10, pady=10)
     tk.Button(btn_frame, text="Crear minutas", command=recopilar_y_crear).pack(side="left", padx=5)
     tk.Button(btn_frame, text="Cerrar", command=on_close).pack(side="right", padx=5)
 
-def crea_minuta_skills_docx(dades):
+def crea_minuta_skills_docx(dades, identificativos):
     def crea_docx(datos):
         doc = Document()
         section = doc.sections[0]
@@ -1163,12 +1169,17 @@ def crea_minuta_skills_docx(dades):
         for i in range(1, len(segona_fila.cells)):
             celda_merged = celda_merged.merge(segona_fila.cells[i])
 
+        
+
         segona_fila.height = Cm(0.2)
         segona_fila.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
         
 
         tercera_fila = tabla.rows[2]
-        run2 = tercera_fila.cells[0].paragraphs[0].add_run("NOM I COGNOMS")
+        celda_merged = tercera_fila.cells[0]
+        for i in range(1, len(tercera_fila.cells)):
+            celda_merged = celda_merged.merge(tercera_fila.cells[i])
+        run2 = tercera_fila.cells[0].paragraphs[0].add_run("NOM I COGNOMS: ")
         run2.bold = True
         run3 = tercera_fila.cells[0].paragraphs[0].add_run(str(datos.get("Nombre", "")))
         run3.bold = False
@@ -1185,44 +1196,56 @@ def crea_minuta_skills_docx(dades):
 
         quinta_fila = tabla.rows[4]
         # NIF | <nif> | Email | <email> | Telèfon | <tel>
-        run_nif = quinta_fila.cells[0].paragraphs[0].add_run("NIF")
+        celda_merged = quinta_fila.cells[0].merge(quinta_fila.cells[1])
+        run_nif = quinta_fila.cells[0].paragraphs[0].add_run("NIF: ")
         run_nif.bold = True
         run_nif2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("NIF", datos.get("DNI", datos.get("NIF/NIE", "")))))
         run_nif2.bold = False
 
-        run_email = quinta_fila.cells[2].paragraphs[0].add_run("Email")
+        celda_merged2 = quinta_fila.cells[2].merge(quinta_fila.cells[3])
+        run_email = quinta_fila.cells[2].paragraphs[0].add_run("Email: ")
         run_email.bold = True
-        run_email2 = quinta_fila.cells[3].paragraphs[0].add_run(str(datos.get("Email", datos.get("Correo electrónico", datos.get("Correo", "")))))
+        run_email2 = quinta_fila.cells[2].paragraphs[0].add_run(str(datos.get("Email", datos.get("Correo electrónico", datos.get("Correo", "")))))
         run_email2.bold = False
+        
 
-        run_tel = quinta_fila.cells[4].paragraphs[0].add_run("Telèfon")
+        celda_merged = quinta_fila.cells[4].merge(quinta_fila.cells[5])
+        run_tel = quinta_fila.cells[4].paragraphs[0].add_run("Telèfon: ")
         run_tel.bold = True
-        run_tel2 = quinta_fila.cells[5].paragraphs[0].add_run(str(
+        run_tel2 = quinta_fila.cells[4].paragraphs[0].add_run(str(
             datos.get("Telèfon", datos.get("Teléfono", datos.get("Telefono", "")))
         ))
         run_tel2.bold = False
 
 
         sexta_fila = tabla.rows[5]
-        run_grup = sexta_fila.cells[0].paragraphs[0].add_run("GRUP")
+
+        celda_merged = sexta_fila.cells[0].merge(sexta_fila.cells[1])
+        run_grup = sexta_fila.cells[0].paragraphs[0].add_run("GRUP: ")
         run_grup.bold = True
-        sexta_fila.cells[1].paragraphs[0].text = str(datos.get("Grup", ""))
+        run_grup2 = sexta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Grup", "")))
+        run_grup2.bold = False
 
-        run_nivell = sexta_fila.cells[2].paragraphs[0].add_run("NIVELL")
+
+        celda_merged = sexta_fila.cells[2].merge(sexta_fila.cells[3])
+        run_nivell = sexta_fila.cells[2].paragraphs[0].add_run("NIVELL: ")
         run_nivell.bold = True
-        sexta_fila.cells[3].paragraphs[0].text = str(datos.get("Nivell", ""))
+        run_nivell2 = sexta_fila.cells[2].paragraphs[0].add_run(str(datos.get("Nivell", "")))
+        run_nivell2.bold = False
 
-        run_relacion = sexta_fila.cells[4].paragraphs[0].add_run("RELACIÓ JURÍDICA")
+        celda_merged = sexta_fila.cells[4].merge(sexta_fila.cells[5])
+        run_relacion = sexta_fila.cells[4].paragraphs[0].add_run("RELACIÓ JURÍDICA: ")
         run_relacion.bold = True
-        sexta_fila.cells[5].paragraphs[0].text = str(datos.get("Relacio_juridica", ""))
+        run_relacion2 = sexta_fila.cells[4].paragraphs[0].add_run(str(datos.get("Relacio_juridica", "")))
+        run_relacion2.bold = False
 
         sexta_fila.height = Cm(1.3)
         sexta_fila.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
 
         septima_fila = tabla.rows[6]
 
-        celda_merged = septima_fila.cells[2]
-        for i in range(3, len(septima_fila.cells)):
+        celda_merged = septima_fila.cells[0]
+        for i in range(1, len(septima_fila.cells)):
             celda_merged = celda_merged.merge(septima_fila.cells[i])
 
         
@@ -1233,20 +1256,24 @@ def crea_minuta_skills_docx(dades):
 
 
         # Octava fila: CP, POBLACIÓ, PROVÍNCIA
+
         octava_fila = tabla.rows[7]
+
         run_cp = octava_fila.cells[0].paragraphs[0].add_run("CP: ")
         run_cp.bold = True
         run_cp2 = octava_fila.cells[0].paragraphs[0].add_run(str(datos.get("CP", "")))
         run_cp2.bold = False
 
-        run_poblacio = octava_fila.cells[2].paragraphs[0].add_run("POBLACIÓ: ")
+        celda_merged = octava_fila.cells[1].merge(octava_fila.cells[2])
+        run_poblacio = octava_fila.cells[1].paragraphs[0].add_run("POBLACIÓ: ")
         run_poblacio.bold = True
-        run_poblacio2 = octava_fila.cells[2].paragraphs[0].add_run(str(datos.get("Población", "")))
+        run_poblacio2 = octava_fila.cells[1].paragraphs[0].add_run(str(datos.get("Población", "")))
         run_poblacio2.bold = False
 
-        run_provincia = octava_fila.cells[4].paragraphs[0].add_run("PROVÍNCIA: ")
+        celda_merged = octava_fila.cells[3].merge(octava_fila.cells[4])
+        run_provincia = octava_fila.cells[3].paragraphs[0].add_run("PROVÍNCIA: ")
         run_provincia.bold = True
-        run_provincia2 = octava_fila.cells[4].paragraphs[0].add_run(str(datos.get("Provincia", "")))
+        run_provincia2 = octava_fila.cells[3].paragraphs[0].add_run(str(datos.get("Provincia", "")))
         run_provincia2.bold = False
 
         #####
@@ -1256,14 +1283,14 @@ def crea_minuta_skills_docx(dades):
         ####
 
         # TABLA DE DATOS ECONÓMICOS DEL PERCEPTOR/A
-        tabla = doc.add_table(rows=6, cols=6)
+        tabla3 = doc.add_table(rows=6, cols=6)
         # tabla.autofit = True
-        for row in tabla.rows:
+        for row in tabla3.rows:
             row.height = Cm(0.8)
             row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
         # Borde externo doble y sin bordes internos
 
-        tbl = tabla._tbl
+        tbl = tabla3._tbl
         tblPr = tbl.tblPr
         
         if tblPr is None:
@@ -1283,7 +1310,7 @@ def crea_minuta_skills_docx(dades):
         tblPr.append(borders)
 
         # Unir las celdas de la primera fila desde la segunda hasta la última
-        primera_fila = tabla.rows[0]
+        primera_fila = tabla3.rows[0]
         celda_merged = primera_fila.cells[0]
         for i in range(1, len(primera_fila.cells)):
             celda_merged = celda_merged.merge(primera_fila.cells[i])
@@ -1294,7 +1321,7 @@ def crea_minuta_skills_docx(dades):
         primera_fila.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
        
 
-        segona_fila = tabla.rows[1]
+        segona_fila = tabla3.rows[1]
         run2 = segona_fila.cells[0].paragraphs[0].add_run("DESCRIPCIÓ DE L’ACTIVITAT: ")
         run2.bold = True
 
@@ -1302,29 +1329,42 @@ def crea_minuta_skills_docx(dades):
         for i in range(0, len(segona_fila.cells)):
             celda_merged = celda_merged.merge(segona_fila.cells[i])
 
-        tercera_fila = tabla.rows[2]
+        tercera_fila = tabla3.rows[2]
         tercera_fila.cells[1].paragraphs[0].text = datos["Nombre del curso"]
 
         celda_merged = tercera_fila.cells[0]
         for i in range(0, len(tercera_fila.cells)):
             celda_merged = celda_merged.merge(tercera_fila.cells[i])
 
-        cuarta_fila = tabla.rows[3]
-        cuarta_fila.cells[0].paragraphs[0].add_run("DATA: ")
+        cuarta_fila = tabla3.rows[3]
+
+        for i in range(0, len(cuarta_fila.cells)):
+            celda_merged = cuarta_fila.cells[0].merge(cuarta_fila.cells[i])
+
+        cuarta_fila.cells[0].paragraphs[0].add_run("DATES: ")
         cuarta_fila.cells[0].paragraphs[0].runs[0].bold = True
         run2 = cuarta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Dates_inici_final", "")))
         run2.bold = False
 
-        quinta_fila = tabla.rows[4]
-        quinta_fila.cells[0].paragraphs[0].add_run("IMPORT BRUT: ")
-        run2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Importe bruto", "")))
+
+        quinta_fila = tabla3.rows[4]
+        for i in range(0, len(quinta_fila.cells)):
+            celda_merged = quinta_fila.cells[0].merge(quinta_fila.cells[i])
+
+        
+        run = quinta_fila.cells[0].paragraphs[0].add_run("IMPORT BRUT: ")
+        run.bold = True
+        run2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Importe bruto", ""))+ " €")
         run2.bold = False
 
+        sexta_fila = tabla3.rows[5]
+        for i in range(0, len(sexta_fila.cells)):
+            celda_merged = sexta_fila.cells[0].merge(sexta_fila.cells[i])
 
-        sexta_fila = tabla.rows[5]
+        
         sexta_fila.cells[0].paragraphs[0].add_run("IMPORT NET: ")
         sexta_fila.cells[0].paragraphs[0].runs[0].bold = True
-        run2 = sexta_fila.cells[2].paragraphs[0].add_run(str(datos.get("Importe neto", "")) + " €")
+        run2 = sexta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Importe neto", "")) + " €")
         run2.bold = False
         
 
@@ -1338,14 +1378,14 @@ def crea_minuta_skills_docx(dades):
         ####
 
         # TABLA DE DATOS bancarios DEL PERCEPTOR/A
-        tabla = doc.add_table(rows=3, cols=6)
+        tabla4 = doc.add_table(rows=3, cols=6)
         # tabla.autofit = True
-        for row in tabla.rows:
+        for row in tabla4.rows:
             row.height = Cm(0.9)
             row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
         # Borde externo doble y sin bordes internos
 
-        tbl = tabla._tbl
+        tbl = tabla4._tbl
         tblPr = tbl.tblPr
         
         if tblPr is None:
@@ -1365,7 +1405,7 @@ def crea_minuta_skills_docx(dades):
         tblPr.append(borders)
 
         # Unir las celdas de la primera fila desde la segunda hasta la última
-        primera_fila = tabla.rows[0]
+        primera_fila = tabla4.rows[0]
         celda_merged = primera_fila.cells[0]
         for i in range(1, len(primera_fila.cells)):
             celda_merged = celda_merged.merge(primera_fila.cells[i])
@@ -1376,24 +1416,32 @@ def crea_minuta_skills_docx(dades):
         primera_fila.cells[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
        
 
-        segona_fila = tabla.rows[1]
-        run = segona_fila.cells[0].paragraphs[0].add_run("IBAN:")
+        segona_filatt4 = tabla4.rows[1]
+        celda_merged2 = segona_filatt4.cells[0]
+        for i in range(1, len(segona_filatt4.cells)):
+            celda_merged2 = celda_merged2.merge(segona_filatt4.cells[i])
+   
+        run = segona_filatt4.cells[0].paragraphs[0].add_run("IBAN: ")
         run.bold = True
-
-
-        celda_merged = segona_fila.cells[1]
-        for i in range(1, len(segona_fila.cells)):
-            celda_merged = celda_merged.merge(segona_fila.cells[i])
         
-        segona_fila.cells[1].paragraphs[0].text = str(datos.get("IBAN", ""))
+        # Formatear IBAN: separar en grupos de 4 caracteres
+        iban_raw = str(datos.get("IBAN", "")).replace(" ", "").upper()
+        iban_formatted = " ".join([iban_raw[i:i+4] for i in range(0, len(iban_raw), 4)])
+        run2 = segona_filatt4.cells[0].paragraphs[0].add_run(iban_formatted)
+        run2.bold = False
 
-        tercera_fila = tabla.rows[2]
-        run = tercera_fila.cells[0].paragraphs[0].add_run("BIC:")
+
+        # segona_fila.cells[1].paragraphs[0].text = str(datos.get("IBAN", ""))
+
+        tercera_filatt4 = tabla4.rows[2]
+        celda_merged = tercera_filatt4.cells[0]
+        for i in range(0, len(tercera_filatt4.cells)):
+            celda_merged = tercera_filatt4.cells[0].merge(tercera_filatt4.cells[i])
+
+        run = tercera_filatt4.cells[0].paragraphs[0].add_run("BIC: ")
         run.bold = True
-        tercera_fila.cells[1].paragraphs[0].text = str(datos.get("BIC", ""))
-        celda_merged = tercera_fila.cells[1]
-        for i in range(2, len(tercera_fila.cells)):
-            celda_merged = celda_merged.merge(tercera_fila.cells[i])
+        run2 = tercera_filatt4.cells[0].paragraphs[0].add_run(str(datos.get("BIC", "")))
+        run2.bold = False
 
         ####################################
 
@@ -1419,7 +1467,8 @@ def crea_minuta_skills_docx(dades):
 
         #####################################
         # fila.cells[1].text = 
-        doc_name = f"MINUTA_{datos['Nombre'].replace(' ', '_')}.docx"
+        codigo = identificativos.get('CÓDIGO EDICIÓN / CODI EDICIÓ', '')
+        doc_name = f"{codigo}_MINUTA_{datos['Nombre'].replace(' ', '_')}.docx"
 
         doc.save(doc_name)
 
@@ -1459,7 +1508,7 @@ def crea_minuta_skills_docx(dades):
         # Validaciones
         errores["Nombre y Apellidos"] = "" if solo_texto(campos.get("Nombre", "")) else "Solo texto permitido"
         errores["NIF"] = "" if nif_valido(campos.get("NIF", "")) else "Debe tener 8 números y 1 letra"
-        errores["Domicili"] = "" if solo_texto(campos.get("Domicili", "")) else "Solo texto permitido"
+        errores["Domicili"] = "" if texto_numeros(campos.get("Domicili", "")) else "Solo texto permitido"
         errores["CP"] = "" if cp_valido(campos.get("CP", "")) else "Debe tener 5 cifras"
         errores["Población"] = "" if solo_texto(campos.get("Población", "")) else "Solo texto permitido"
         errores["Provincia"] = "" if solo_texto(campos.get("Provincia", "")) else "Solo texto permitido"
@@ -1483,16 +1532,28 @@ def crea_minuta_skills_docx(dades):
         else:
             return {"ok": False, "errores": errores}
 
+    #for dato in dades:
+    #    crea_docx(dato)
+    #    messagebox.showinfo("Documento generado", f"✅ Se ha creado la minuta correctamente para {dato.get('Nombre', '')}.")
+
+    ##### temporatlmente deshabilitado validación #####
 
 
+    
     for dato in dades:
         validar_datos = validar_datos(dato)
+        errores_text = ""
         if not validar_datos.get("ok", False):
-            messagebox.showwarning("Validación de datos", f"Errores de validación:\n{json.dumps(validar_datos, ensure_ascii=False, indent=2)}")
+            for key, val in validar_datos['errores'].items():
+                if val:
+                    if val != "":
+                        errores_text += f"Error en {key}: {val}\n"
+            messagebox.showwarning(f"Validación de datos en {dato.get('Nombre', '')} \n", f"Errores de validación:\n\n{errores_text}\nPor favor, corrígelos antes de generar el documento.")
             continue
         else:
             crea_docx(dato)
-
+            messagebox.showinfo("Documento generado", f"✅ Se ha creado la minuta correctamente para {dato.get('Nombre', '')}.")
+    
 
 
 
