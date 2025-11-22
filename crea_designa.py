@@ -31,13 +31,28 @@ def resource_path(relative_path):
 
 def find_excel_file(status_label):
     status_label.config(text="Buscando archivo Excel...")
-    files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx'))]
-    if files:
-        status_label.config(text=f"Archivo encontrado: {files[0]}")
-        return files[0]
+
+    
+    if sys.platform == "darwin":  # macOS
+
+        file_path = filedialog.askopenfilename(
+            title="Selecciona el archivo Excel",
+            filetypes=[("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")]
+        )
+        if file_path:
+            status_label.config(text=f"Archivo seleccionado: {os.path.basename(file_path)}")
+            return file_path
+        else:
+            status_label.config(text="Búsqueda cancelada por el usuario.")
+            return None
     else:
-        status_label.config(text="No se encontró ningún archivo Excel.")
-        return None
+        files = [f for f in os.listdir('.') if f.lower().endswith(('.xlsx'))]
+        if files:
+            status_label.config(text=f"Archivo encontrado: {files[0]}")
+            return files[0]
+        else:
+            status_label.config(text="No se encontró ningún archivo Excel.")
+            return None
 
 
 def normaliza_fechas_realizacion(fecha_str):
@@ -283,7 +298,25 @@ def generar_certificas(datos, identificativos, numero_a_letras=lambda x:str(x)):
     # fila.cells[1].text = 
     doc_name = f"{identificativos.get('CÓDIGO EDICIÓN / CODI EDICIÓ', '')}_CERTIFICA_{datos['Nombre'].replace(' ', '_')}.docx"
 
-    doc.save(doc_name)
+
+    save_path = doc_name
+    if sys.platform == 'darwin':
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        initial_dir = "."
+        # Extract filename from doc_name, assuming doc_name might include a path
+        initial_file = doc_name.split('/')[-1].split('\\')[-1]
+        file_path = filedialog.asksaveasfilename(
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            defaultextension=".docx",
+            filetypes=[("Word Documents", "*.docx")]
+        )
+        if file_path:  # Only update save_path if user selected a file
+            save_path = file_path
+        root.destroy() # Destroy the Tkinter root window
+
+    doc.save(save_path)
     # Convertir a PDF si se desea
     '''
     if convertir_pdf_var.get():
@@ -418,7 +451,24 @@ def generar_documento(datos, identificativos, numero_a_letras=lambda x:str(x)):
     # fila.cells[1].text = 
     doc_name = f"{identificativos.get('CÓDIGO EDICIÓN / CODI EDICIÓ', '')}_DESIGNA_{datos['Nombre'].replace(' ', '_')}.docx"
 
-    doc.save(doc_name)
+    save_path = doc_name
+    if sys.platform == 'darwin':
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        initial_dir = "."
+        # Extract filename from doc_name, assuming doc_name might include a path
+        initial_file = doc_name.split('/')[-1].split('\\')[-1]
+        file_path = filedialog.asksaveasfilename(
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            defaultextension=".docx",
+            filetypes=[("Word Documents", "*.docx")]
+        )
+        if file_path:  # Only update save_path if user selected a file
+            save_path = file_path
+        root.destroy() # Destroy the Tkinter root window
+
+    doc.save(save_path)
     # Convertir a PDF si se desea
     '''
     if convertir_pdf_var.get():
@@ -668,7 +718,24 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
 
     # Nombre de archivo y guardado
     doc_name = f"{codigo}_DESIGNA_{datos['Nombre'].replace(' ', '_')}.docx"
-    doc.save(doc_name)
+    save_path = doc_name
+    if sys.platform == 'darwin':
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        initial_dir = "."
+        # Extract filename from doc_name, assuming doc_name might include a path
+        initial_file = doc_name.split('/')[-1].split('\\')[-1]
+        file_path = filedialog.asksaveasfilename(
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            defaultextension=".docx",
+            filetypes=[("Word Documents", "*.docx")]
+        )
+        if file_path:  # Only update save_path if user selected a file
+            save_path = file_path
+        root.destroy() # Destroy the Tkinter root window
+
+    doc.save(save_path)
 
 
 
@@ -892,7 +959,24 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
 
     # Nombre de archivo y guardado
     doc_name = f"{codigo}_CERTIFICA_INFORME_POSTERIOR_{datos['Nombre'].replace(' ', '_')}.docx"
-    doc.save(doc_name)
+    save_path = doc_name
+    if sys.platform == 'darwin':
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        initial_dir = "."
+        # Extract filename from doc_name, assuming doc_name might include a path
+        initial_file = doc_name.split('/')[-1].split('\\')[-1]
+        file_path = filedialog.asksaveasfilename(
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            defaultextension=".docx",
+            filetypes=[("Word Documents", "*.docx")]
+        )
+        if file_path:  # Only update save_path if user selected a file
+            save_path = file_path
+        root.destroy() # Destroy the Tkinter root window
+
+    doc.save(save_path)
 
 
 
@@ -1473,7 +1557,26 @@ def crea_minuta_skills_docx(dades, identificativos):
         codigo = identificativos.get('CÓDIGO EDICIÓN / CODI EDICIÓ', '')
         doc_name = f"{codigo}_MINUTA_{datos['Nombre'].replace(' ', '_')}.docx"
 
-        doc.save(doc_name)
+        #doc.save(doc_name)
+
+        save_path = doc_name
+        if sys.platform == 'darwin':
+            root = tk.Tk()
+            root.withdraw()  # Hide the main window
+            initial_dir = "."
+            # Extract filename from doc_name, assuming doc_name might include a path
+            initial_file = doc_name.split('/')[-1].split('\\')[-1]
+            file_path = filedialog.asksaveasfilename(
+                initialdir=initial_dir,
+                initialfile=initial_file,
+                defaultextension=".docx",
+                filetypes=[("Word Documents", "*.docx")]
+            )
+            if file_path:  # Only update save_path if user selected a file
+                save_path = file_path
+            root.destroy() # Destroy the Tkinter root window
+
+        doc.save(save_path)
 
         try:
             messagebox.showinfo("Documento generado", f"✅ Se ha creado '{doc_name}' correctamente.")
