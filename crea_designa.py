@@ -303,7 +303,8 @@ def generar_certificas(datos, identificativos, numero_a_letras=lambda x:str(x)):
     if sys.platform == 'darwin':
         root = tk.Tk()
         root.withdraw()  # Hide the main window
-        initial_dir = "."
+        initial_dir = os.getcwd()
+        # initial_dir = os.getcwd()
         # Extract filename from doc_name, assuming doc_name might include a path
         initial_file = doc_name.split('/')[-1].split('\\')[-1]
         file_path = filedialog.asksaveasfilename(
@@ -455,7 +456,7 @@ def generar_documento(datos, identificativos, numero_a_letras=lambda x:str(x)):
     if sys.platform == 'darwin':
         root = tk.Tk()
         root.withdraw()  # Hide the main window
-        initial_dir = "."
+        initial_dir = os.getcwd()
         # Extract filename from doc_name, assuming doc_name might include a path
         initial_file = doc_name.split('/')[-1].split('\\')[-1]
         file_path = filedialog.asksaveasfilename(
@@ -722,7 +723,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
     if sys.platform == 'darwin':
         root = tk.Tk()
         root.withdraw()  # Hide the main window
-        initial_dir = "."
+        initial_dir = os.getcwd()
         # Extract filename from doc_name, assuming doc_name might include a path
         initial_file = doc_name.split('/')[-1].split('\\')[-1]
         file_path = filedialog.asksaveasfilename(
@@ -963,7 +964,7 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
     if sys.platform == 'darwin':
         root = tk.Tk()
         root.withdraw()  # Hide the main window
-        initial_dir = "."
+        initial_dir = os.getcwd()
         # Extract filename from doc_name, assuming doc_name might include a path
         initial_file = doc_name.split('/')[-1].split('\\')[-1]
         file_path = filedialog.asksaveasfilename(
@@ -1563,7 +1564,7 @@ def crea_minuta_skills_docx(dades, identificativos):
         if sys.platform == 'darwin':
             root = tk.Tk()
             root.withdraw()  # Hide the main window
-            initial_dir = "."
+            initial_dir = os.getcwd()
             # Extract filename from doc_name, assuming doc_name might include a path
             initial_file = doc_name.split('/')[-1].split('\\')[-1]
             file_path = filedialog.asksaveasfilename(
