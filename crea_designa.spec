@@ -35,5 +35,10 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['ico.ico'],
+)
+app = BUNDLE(
+    exe,
+    name='crea_designa.app',
+    icon=None,
+    bundle_identifier=None,
 )

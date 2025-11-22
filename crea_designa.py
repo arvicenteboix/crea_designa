@@ -20,7 +20,7 @@ from docx.oxml.ns import nsdecls
 import sys
 from tkinter import ttk
 
-
+version = "v1.0.7"
 
 # from docx2pdf import convert
 
@@ -1127,7 +1127,7 @@ def crea_minuta_skills_docx(dades, identificativos):
 
             # TABLA DE DATOS DEL PERCEPTOR/A
         tabla = doc.add_table(rows=8, cols=6)
-        # tabla.autofit = True
+        tabla.autofit = True
         for row in tabla.rows:
             row.height = Cm(0.8)
             row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
@@ -1196,23 +1196,26 @@ def crea_minuta_skills_docx(dades, identificativos):
 
         quinta_fila = tabla.rows[4]
         # NIF | <nif> | Email | <email> | Telèfon | <tel>
-        celda_merged = quinta_fila.cells[0].merge(quinta_fila.cells[1])
+        #celda_merged = quinta_fila.cells[0].merge(quinta_fila.cells[1])
+        celda_merged = quinta_fila.cells[0]
+        for i in range(1, len(quinta_fila.cells)):
+            celda_merged = celda_merged.merge(quinta_fila.cells[i])
+
+
         run_nif = quinta_fila.cells[0].paragraphs[0].add_run("NIF: ")
         run_nif.bold = True
-        run_nif2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("NIF", datos.get("DNI", datos.get("NIF/NIE", "")))))
+        run_nif2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("NIF", datos.get("DNI", datos.get("NIF/NIE", ""))))+"  ")
         run_nif2.bold = False
-
-        celda_merged2 = quinta_fila.cells[2].merge(quinta_fila.cells[3])
-        run_email = quinta_fila.cells[2].paragraphs[0].add_run("Email: ")
+        
+        run_email = quinta_fila.cells[0].paragraphs[0].add_run("Email: ")
         run_email.bold = True
-        run_email2 = quinta_fila.cells[2].paragraphs[0].add_run(str(datos.get("Email", datos.get("Correo electrónico", datos.get("Correo", "")))))
+        run_email2 = quinta_fila.cells[0].paragraphs[0].add_run(str(datos.get("Email", datos.get("Correo electrónico", datos.get("Correo", "")))).lower() + "  ")
         run_email2.bold = False
         
 
-        celda_merged = quinta_fila.cells[4].merge(quinta_fila.cells[5])
-        run_tel = quinta_fila.cells[4].paragraphs[0].add_run("Telèfon: ")
+        run_tel = quinta_fila.cells[0].paragraphs[0].add_run("Telèfon: ")
         run_tel.bold = True
-        run_tel2 = quinta_fila.cells[4].paragraphs[0].add_run(str(
+        run_tel2 = quinta_fila.cells[0].paragraphs[0].add_run(str(
             datos.get("Telèfon", datos.get("Teléfono", datos.get("Telefono", "")))
         ))
         run_tel2.bold = False
@@ -1270,10 +1273,10 @@ def crea_minuta_skills_docx(dades, identificativos):
         run_poblacio2 = octava_fila.cells[1].paragraphs[0].add_run(str(datos.get("Población", "")))
         run_poblacio2.bold = False
 
-        celda_merged = octava_fila.cells[3].merge(octava_fila.cells[4])
-        run_provincia = octava_fila.cells[3].paragraphs[0].add_run("PROVÍNCIA: ")
+        celda_merged = octava_fila.cells[4].merge(octava_fila.cells[5])
+        run_provincia = octava_fila.cells[4].paragraphs[0].add_run("PROVÍNCIA: ")
         run_provincia.bold = True
-        run_provincia2 = octava_fila.cells[3].paragraphs[0].add_run(str(datos.get("Provincia", "")))
+        run_provincia2 = octava_fila.cells[4].paragraphs[0].add_run(str(datos.get("Provincia", "")))
         run_provincia2.bold = False
 
         #####
@@ -1541,18 +1544,18 @@ def crea_minuta_skills_docx(dades, identificativos):
 
     
     for dato in dades:
-        validar_datos = validar_datos(dato)
+        validar_datos_data = validar_datos(dato)
         errores_text = ""
-        if not validar_datos.get("ok", False):
-            for key, val in validar_datos['errores'].items():
+        if not validar_datos_data.get("ok", False):
+            for key, val in validar_datos_data['errores'].items():
                 if val:
                     if val != "":
                         errores_text += f"Error en {key}: {val}\n"
             messagebox.showwarning(f"Validación de datos en {dato.get('Nombre', '')} \n", f"Errores de validación:\n\n{errores_text}\nPor favor, corrígelos antes de generar el documento.")
-            continue
+            break
         else:
             crea_docx(dato)
-            messagebox.showinfo("Documento generado", f"✅ Se ha creado la minuta correctamente para {dato.get('Nombre', '')}.")
+            #messagebox.showinfo("Documento generado", f"✅ Se ha creado la minuta correctamente para {dato.get('Nombre', '')}.")
     
 
 
@@ -1705,6 +1708,10 @@ def main():
     btn.pack(pady=10)
     btn2.pack(pady=10)
     btn3.pack(pady=10)
+
+    version_label = tk.Label(root, text=version, font=("Arial", 10), fg="gray")
+    version_label.place(relx=1.0, rely=1.0, anchor='se', x=-5, y=-5)
+
 
     root.mainloop()
 
