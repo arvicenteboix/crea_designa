@@ -5,7 +5,7 @@ a = Analysis(
     ['crea_designa.py'],
     pathex=[],
     binaries=[],
-    datas=[('a.png', '.'), ('b.png', '.')],
+    datas=[('a.png', '.'), ('b.png', '.'), ('c.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,10 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-)
-app = BUNDLE(
-    exe,
-    name='crea_designa.app',
-    icon=None,
-    bundle_identifier=None,
+    icon=['ico.ico'],
 )

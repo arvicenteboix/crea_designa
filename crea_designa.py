@@ -20,7 +20,10 @@ from docx.oxml.ns import nsdecls
 import sys
 from tkinter import ttk
 
-version = "v1.0.7"
+from tkcalendar import DateEntry
+
+version = "v1.0.9alpha"
+
 
 # from docx2pdf import convert
 
@@ -740,6 +743,276 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
 
 
 
+def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educatiu, carrec, numero_a_letras=lambda x:str(x)):
+
+    
+
+    doc = Document()
+    section = doc.sections[0]
+    section.top_margin = Cm(1.5)
+    section.bottom_margin = Cm(1.5)
+    section.left_margin = Cm(3.0)
+    section.right_margin = Cm(3.0)
+    
+    imagen_path = resource_path('c.png')
+    
+    # imagen_path = "./b.png"
+
+    doc.add_picture(imagen_path, width=Cm(15.0))
+
+    estilo = doc.styles['Normal']
+    fuente = estilo.font
+    fuente.name = 'Times New Roman'
+    fuente.size = Pt(12)
+
+    # Encabezado de autoridad
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run("\nMARTA ARMENDIA SANTOS, DIRECTORA GENERAL DE FORMACIÓ PROFESSIONAL\n")
+
+    # 1. Designación del personal docente
+    curso = identificativos.get('TÍTULO ACCIÓN FORMATIVA / TÍTOL ACCIÓ FORMATIVA', '')
+    codigo = identificativos.get('CÓDIGO EDICIÓN / CODI EDICIÓ', '')
+
+    fechas = identificativos.get('FECHAS REALIZACIÓN / DATES REALITZACIÓ', '')
+    modalidad = identificativos.get('MODALIDAD/MODALITAT', '')
+
+
+    # Determinar si es funcionario GVA
+    movimientos = datos['Movimientos']
+    juridico = str(movimientos[0].get('JURÍDICO', '')).strip().lower()
+    if juridico == "funcionario gva":
+        # Si modalidad contiene "online" o "on line" (ignorando mayúsculas/minúsculas), poner "de forma online", si no, poner "presencial a"
+        modalidad_lower = modalidad.lower()
+        if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
+            modalidad_text = f"de forma {modalidad_lower}"
+        else:
+            modalidad_text = f"presencial a {modalidad}"
+
+        designa_text = (
+            f"Vist l'informe del cap de servei del {fecha}, corresponent a la formació {codigo} - {curso} "
+            f"realitzat {modalidad_text} del {fechas}.\n"
+            f"Vist que els professors han realitzat en els termes establits i de manera adequada la labor "
+            f"per a la qual van ser designats."
+        )
+
+    else:
+        modalidad_lower = modalidad.lower()
+        nombre = datos.get('Nombre', '')
+        dni = datos.get('DNI', '').replace(' ', '')
+        # Calcular total de horas (sumar UNIDADES/UNITATS si es relevante)
+        total_hores = sum(
+            float(mov.get('UNIDADES/UNITATS', 0) or 0)
+            for mov in movimientos
+            if str(mov.get("TIPO DE INTERVENCIÓN*/ TIPUS D'INTERVENCIÓ*", "")).strip().lower() == "síncrona"
+        )
+        # Si no hay horas, dejarlo vacío o poner el total de unidades
+        if not total_hores:
+            total_hores = sum(float(mov.get('UNIDADES/UNITATS', 0) or 0) for mov in movimientos)
+        if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
+            modalidad_text = f"de forma {modalidad_lower}"
+        else:
+            modalidad_text = f"presencial a {modalidad}"
+        designa_text = (
+            f"Vist l'informe de la {carrec} del {fecha}, corresponent a la formació {codigo} - {curso} "
+            f"realitzat {modalidad_text} del {fechas}.\n"
+            f"Vist que els professors han realitzat en els termes establits i de manera adequada la labor "
+            f"per a la qual van ser designats."
+        )
+
+    p1 = doc.add_paragraph(designa_text)
+
+    # RESOLUCIÓN
+    p_resolc = doc.add_paragraph()
+    p_resolc.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run_resolc = p_resolc.add_run("RESOLC")
+    run_resolc.bold = True
+
+    # TABLA CENTRAL
+    movimientos = datos['Movimientos']
+    importe_total = sum(float(mov.get('IMPORTE / IMPORT (€)', 0) or 0) for mov in movimientos)
+    texto = (
+    f"Que ordene el pagament als professors relacionats a continuació, "   
+    f"l'import total de {importe_total} €, amb la distribució indicada, per actuar com a "
+    f"col·laboradors en l'activitat de formació {codigo} - {curso}, per actuar fora de l'horari normal de treball i amb càrrec a "
+    f"l'aplicació pressupostària {partida}, de conformitat amb el DECRET 80/2025, de 3 de juny, del Consell"
+    f"sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris."
+    )
+
+    p = doc.add_paragraph(texto)
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+
+    tabla = doc.add_table(rows=1, cols=8)
+    # Centrar contenido horizontal y verticalmente en toda la tabla
+    # Centrar contenido horizontal y verticalmente en toda la tabla (todas las filas y columnas)
+    
+    tabla.style = 'Table Grid'
+    hdr_cells = tabla.rows[0].cells
+    # Ajuste de altura y alineación de la fila de cabecera, y tamaño de fuente 10
+    headers = ["NOM I COGNOMS", "DNI","CENTRE EDUCATIU","CÀRREC", "UNITATS", "CONCEPTE", "IMPORT PER UNITAT", "TOTAL"]
+    
+    for i in range(8):
+        p = hdr_cells[i].paragraphs[0]
+        run = p.add_run(headers[i])
+        run.bold = True
+        run.font.size = Pt(8)
+        hdr_cells[i].vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+        # Fondo gris claro para la cabecera
+        tc = hdr_cells[i]._tc
+        tcPr = tc.get_or_add_tcPr()
+        from docx.oxml import parse_xml
+        from docx.oxml.ns import nsdecls
+        shd = parse_xml(r'<w:shd {} w:fill="D9D9D9"/>'.format(nsdecls('w')))
+        tcPr.append(shd)
+
+    for mov in movimientos:
+        row = tabla.add_row().cells
+        # Ajustar el tamaño de la fuente por defecto a 10 pt para el contenido de las filas
+        row[0].text = datos['Nombre']
+        row[1].text = str(datos['DNI'])
+        row[2].text = centre_educatiu
+        row[3].text = carrec
+        # Añadir sufijo a 'unitats' según el valor de 'concepte'
+        concepte = str(mov.get("TIPO DE INTERVENCIÓN*/ TIPUS D'INTERVENCIÓ*", "")).strip().lower()
+        unitats = str(mov.get('UNIDADES/UNITATS', ''))
+        if concepte == "síncrona":
+            unitats = f"{unitats} hores"
+        elif concepte == "elaboración de casos-actividades prácticas":
+            unitats = f"{unitats} casos"
+        elif concepte == "tutorización":
+            unitats = f"{unitats} setmanes"
+        row[4].text = unitats
+        # row[5].text = str(mov.get("TIPO DE INTERVENCIÓN*/ TIPUS D'INTERVENCIÓ*", ""))
+        # Añadir sufijo a 'tarificació' según el valor de 'concepte'
+        tarificacio = str(mov.get('TARIFICACIÓN APLICADA (€)', ''))
+        # Traducción de concepte al valenciano
+        if concepte == "síncrona":
+            concepte_val = "formació síncrona"
+            tarificacio = f"{tarificacio} €/hora"
+        elif concepte == "elaboración de casos-actividades prácticas":
+            concepte_val = "el·laboració de casos-activitats pràctiques"
+            tarificacio = f"{tarificacio} €/cas"
+        elif concepte == "tutorización":
+            concepte_val = "tutorització"
+            tarificacio = f"{tarificacio} €/setmana"
+        elif concepte == "ponente":
+            concepte_val = "ponent"
+            tarificacio = f"{tarificacio} €/hora"
+        else:
+            concepte_val = concepte
+        row[5].text = concepte_val
+        row[6].text = tarificacio
+        row[7].text = str(mov.get('IMPORTE / IMPORT (€)', '')) + " €"
+        for cell in row:  # Recorre TODAS las celdas de la fila
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.size = Pt(10)
+
+    # Total general
+    
+    row = tabla.add_row().cells
+    # Deja las columnas 0 a 4 vacías y pon "TOTAL" en la columna 5
+    for i in range(6):
+        row[i].text = ""
+        # Quitar borde izquierdo y borde inferior
+        tc = row[i]._tc
+        tcPr = tc.get_or_add_tcPr()
+        # Eliminar borde izquierdo
+        tcPr.append(parse_xml(r'<w:tcBorders %s><w:left w:val="nil"/></w:tcBorders>' % nsdecls('w')))
+        # Eliminar borde inferior
+        tcPr.append(parse_xml(r'<w:tcBorders %s><w:bottom w:val="nil"/></w:tcBorders>' % nsdecls('w')))
+        # Eliminar borde derecho
+        tcPr.append(parse_xml(r'<w:tcBorders %s><w:right w:val="nil"/></w:tcBorders>' % nsdecls('w')))
+    
+    
+    p_total = row[6].paragraphs[0]
+    run_total = p_total.add_run("TOTAL")
+    run_total.bold = True
+    run_total.font.size = Pt(11)
+    # Fondo verde claro para la celda "TOTAL"
+    tc_total = row[6]._tc
+    tcPr_total = tc_total.get_or_add_tcPr()
+    shd_total = parse_xml(r'<w:shd {} w:fill="C6EFCE"/>'.format(nsdecls('w')))
+    tcPr_total.append(shd_total)
+
+    p_importe = row[7].paragraphs[0]
+    run_importe = p_importe.add_run(str(importe_total)+"€")
+    run_importe.bold = True
+    run_importe.font.size = Pt(11)
+    # Fondo verde claro para la celda de importe total
+    tc_importe = row[7]._tc
+    tcPr_importe = tc_importe.get_or_add_tcPr()
+    shd_importe = parse_xml(r'<w:shd {} w:fill="C6EFCE"/>'.format(nsdecls('w')))
+    tcPr_importe.append(shd_importe)
+    
+    # Ajustar la altura de la última fila a 2 cm
+
+    tabla.rows[-1].height = Cm(0.8)
+
+
+
+    for row in tabla.rows:
+        for cell in row.cells:
+            for paragraph in cell.paragraphs:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    
+
+    # Traducir y unir los conceptos en valenciano
+    conceptos_valenciano = []
+    for mov in movimientos:
+        concepte = str(mov.get("TIPO DE INTERVENCIÓN*/ TIPUS D'INTERVENCIÓ*", "")).strip().lower()
+        if concepte == "síncrona":
+            concepte_val = "formació síncrona"
+        elif concepte == "elaboración de casos-actividades prácticas":
+            concepte_val = "el·laboració de casos-activitats pràctiques"
+        elif concepte == "tutorización":
+            concepte_val = "tutorització"
+        elif concepte == "ponente":
+            concepte_val = "ponent"
+        else:
+            concepte_val = concepte
+        conceptos_valenciano.append(concepte_val)
+        # G01090205GE00000.422C00.TE22000053
+
+
+    
+
+
+    # Pie y firma
+    # Pie y firma centrados
+    p_pie = doc.add_paragraph()
+    p_pie.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_pie.add_run("\nValència, en data i signatura electrònica\n\n\n\n\n")
+
+    p_firma = doc.add_paragraph()
+    p_firma.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_firma.add_run("Marta Armendia Santos\nDirectora General de Formació Professional")
+
+    # Nombre de archivo y guardado
+    doc_name = f"{codigo}_RESOLC_{datos['Nombre'].replace(' ', '_')}.docx"
+    save_path = doc_name
+    if sys.platform == 'darwin':
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        initial_dir = os.getcwd()
+        # Extract filename from doc_name, assuming doc_name might include a path
+        initial_file = doc_name.split('/')[-1].split('\\')[-1]
+        file_path = filedialog.asksaveasfilename(
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            defaultextension=".docx",
+            filetypes=[("Word Documents", "*.docx")]
+        )
+        if file_path:  # Only update save_path if user selected a file
+            save_path = file_path
+        root.destroy() # Destroy the Tkinter root window
+
+    doc.save(save_path)
+
+
+
+
 def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:str(x)):
     doc = Document()
     section = doc.sections[0]
@@ -979,6 +1252,8 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
 
     doc.save(save_path)
 
+###### GENERA RESOLC I INFORME SKILLS ######
+
 
 
 
@@ -1183,6 +1458,9 @@ def minuta_skills(datos, identificativos, parent=None):
     tk.Button(btn_frame, text="Crear minutas", command=recopilar_y_crear).pack(side="left", padx=5)
     tk.Button(btn_frame, text="Cerrar", command=on_close).pack(side="right", padx=5)
 
+
+
+
 def crea_minuta_skills_docx(dades, identificativos):
     def crea_docx(datos):
         doc = Document()
@@ -1190,9 +1468,6 @@ def crea_minuta_skills_docx(dades, identificativos):
         section.top_margin = Cm(0.8)
         section.bottom_margin = Cm(0.1)
         section.footer_distance = Cm(0.1)
-
-        
-
 
         imagen_path = resource_path('a.png')
         
@@ -1671,7 +1946,7 @@ def main():
     root.title("GENERA DESIGNAS")
     # Centrar la ventana en la pantalla
     window_width = 400
-    window_height = 300
+    window_height = 350
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = int((screen_width / 2) - (window_width / 2))
@@ -1684,15 +1959,76 @@ def main():
     # convertir_pdf_var = tk.BooleanVar()
     # chk_convertir_pdf = tk.Checkbutton(root, text="Convertir todos los DOCX a PDF al finalizar", variable=convertir_pdf_var)
     # chk_convertir_pdf.pack(pady=5)
-
+    global es_skills
     es_skills = tk.BooleanVar()
+    global es_erasmus
+    es_erasmus = tk.BooleanVar()
+
     chk_es_skills = tk.Checkbutton(root, text="Es Skills", variable=es_skills)
     chk_es_skills.pack(pady=5)
-    es_erasmus = tk.BooleanVar()
     chk_es_erasmus = tk.Checkbutton(root, text="Es fons ERASMUS", variable=es_erasmus)
     chk_es_erasmus.pack(pady=5)
-
+    '''
+    ON PROCESS PRINCIPAL
+    '''
     def on_process(tipo, parent=root):
+        if tipo == "resolc":
+             # Ventana para seleccionar fecha, centre educatiu y carrec
+             if not es_skills.get() and not es_erasmus.get():
+                messagebox.showerror("Error", "Selecciona una opción 'Es Skills' o 'Es fons ERASMUS' per a generar el RESOLC.")
+                return
+
+        fecha = ""
+        centre_educatiu = ""
+        carrec = ""
+        fecha_window = None
+        def crea_ventana_fechas(nombre):
+            nonlocal fecha_window, fecha, centre_educatiu, carrec
+            fecha_window = tk.Toplevel(parent)
+            fecha_window.title("Seleccionar fecha")
+
+            # Centrar la ventana en la pantalla
+            window_width = 300
+            window_height = 300
+            screen_width = fecha_window.winfo_screenwidth()
+            screen_height = fecha_window.winfo_screenheight()
+            x = int((screen_width / 2) - (window_width / 2))
+            y = int((screen_height / 2) - (window_height / 2))
+            fecha_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+            tk.Label(fecha_window, text="Selecciona la fecha para la resolución:").pack(pady=10)
+
+            fecha_entry = DateEntry(fecha_window, date_pattern='dd/mm/yyyy')
+            fecha_entry.pack(pady=5)
+
+            tk.Label(fecha_window, text="Centre educatiu:").pack(pady=5)
+            centre_educatiu_entry = tk.Entry(fecha_window, width=30)
+            centre_educatiu_entry.pack(pady=5)
+
+            tk.Label(fecha_window, text="Càrrec:").pack(pady=5)
+            carrec_entry = tk.Entry(fecha_window, width=30)
+            carrec_entry.pack(pady=5)
+
+            confirmar_btn = tk.Button(fecha_window, text="Confirmar", command=lambda: confirmar_fecha())
+            confirmar_btn.pack(pady=10)
+            tk.Button(fecha_window, text="Cancelar", command=fecha_window.destroy).pack(pady=5)
+            
+
+
+            def confirmar_fecha():
+                nonlocal fecha, centre_educatiu, carrec
+                fecha = fecha_entry.get_date().strftime('%d/%m/%Y')
+                centre_educatiu = centre_educatiu_entry.get()
+                carrec = carrec_entry.get()
+                fecha_window.destroy()
+                
+
+
+        # crea_ventana_fechas()
+        # fecha_window.wait_window()
+
+        # messagebox.showinfo("Fecha seleccionada", f"Fecha seleccionada: {fecha}\nCentre educatiu: {centre_educatiu}\nCàrrec: {carrec}")
+        
         global t
         t = tipo
         try:
@@ -1709,9 +2045,11 @@ def main():
                 return
 
             #show_json(hoja_excel)
+
             if t == "min":
                 minuta_skills(datos=json_data, identificativos=hoja_excel, parent=root)
                 status_label.config(text="¡Proceso completado!")
+                return
             elif es_skills.get():
                 if es_erasmus.get():
                     messagebox.showerror("Error", "La opción 'Es fons ERASMUS' no es compatible con 'Es Skills'.")
@@ -1732,7 +2070,13 @@ def main():
                             generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.TE22000053")
                         elif t == "cer":
                             generar_skills_certifica(datos=persona, identificativos=hoja_excel)
+                        elif t == "resolc":
+                            crea_ventana_fechas(mov.get('Nombre', ''))
+                            fecha_window.wait_window()
+                            generar_skills_resolc(datos=persona, identificativos=hoja_excel, fecha=fecha, centre_educatiu=centre_educatiu, carrec=carrec, partida="G01090205GE00000.422C00.TE22000053")
+                    status_label.config(text="¡Proceso completado!")
                 status_label.config(text="¡Proceso completado!")
+                return
                   # Salir después de generar skills si está seleccionado
             elif es_erasmus.get():
                 if es_skills.get():
@@ -1755,7 +2099,12 @@ def main():
                             generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.OT23000000")
                         elif t == "cer":
                             generar_skills_certifica(datos=persona, identificativos=hoja_excel)
+                        elif t == "resolc":
+                            crea_ventana_fechas(mov.get('Nombre', ''))
+                            fecha_window.wait_window()
+                            generar_skills_resolc(datos=persona, identificativos=hoja_excel, fecha=fecha,  centre_educatiu=centre_educatiu, carrec=carrec,partida="G01090205GE00000.422C00.OT23000000")
                 status_label.config(text="¡Proceso completado!")
+                return
                   # Salir después de generar designas si no está seleccionado skills
             elif not es_skills.get():
                 for persona in json_data:
@@ -1776,6 +2125,7 @@ def main():
                         elif t == "cer":
                             generar_certificas(datos=persona, identificativos=hoja_excel)
                 status_label.config(text="¡Proceso completado!")
+                return
                   # Salir después de generar designas si no está seleccionado skills
             '''
             for persona in json_data:
@@ -1801,17 +2151,19 @@ def main():
             '''
 
             # show_json(json_data)
-            status_label.config(text="¡Proceso completado!")
+            messagebox.showerror("Error", "Ninguna opción seleccionada.")
         except Exception as e:
             status_label.config(text=f"Error: {e}")
             messagebox.showerror("Error", f"Error procesando el archivo: {e}")
 
-    btn = tk.Button(root, text="Genera Designas", command=lambda: on_process("des"), font=("Arial", 14))
-    btn2 = tk.Button(root, text="Genera Certifica", command=lambda: on_process("cer"), font=("Arial", 14))
-    btn3 = tk.Button(root, text="Genera Minuta Skills", command=lambda: on_process("min", root), font=("Arial", 14))
+    btn = tk.Button(root, text="Genera Designas", command=lambda: on_process("des"), font=("Arial", 12))
+    btn2 = tk.Button(root, text="Genera Certifica", command=lambda: on_process("cer"), font=("Arial", 12))
+    btn3 = tk.Button(root, text="Genera Minuta DGFP", command=lambda: on_process("min", root), font=("Arial", 12))
+    btn4 = tk.Button(root, text="Genera Resolc DGFP", command=lambda: on_process("resolc", root), font=("Arial", 12))
     btn.pack(pady=10)
     btn2.pack(pady=10)
     btn3.pack(pady=10)
+    btn4.pack(pady=10)
 
     version_label = tk.Label(root, text=version, font=("Arial", 10), fg="gray")
     version_label.place(relx=1.0, rely=1.0, anchor='se', x=-5, y=-5)

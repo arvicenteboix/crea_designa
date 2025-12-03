@@ -1,3 +1,0 @@
-([('crea_designa',
-   '/Users/alviboi/Documents/crea_designa/dist/crea_designa',
-   'EXECUTABLE')],)
