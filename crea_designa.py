@@ -778,6 +778,7 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
     modalidad = identificativos.get('MODALIDAD/MODALITAT', '')
 
 
+
     # Determinar si es funcionario GVA
     movimientos = datos['Movimientos']
     juridico = str(movimientos[0].get('JURÍDICO', '')).strip().lower()
@@ -787,7 +788,7 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
         if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
             modalidad_text = f"de forma {modalidad_lower}"
         else:
-            modalidad_text = f"presencial a {modalidad}"
+            modalidad_text = f"presencial"
 
         designa_text = (
             f"Vist l'informe del cap de servei del {fecha}, corresponent a la formació {codigo} - {curso} "
@@ -2067,7 +2068,7 @@ def main():
                         for mov in persona.get('Movimientos', [])
                     ):
                         if t == "des":
-                            generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.TE22000053")
+                            generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.22699 fons TE22000053")
                         elif t == "cer":
                             generar_skills_certifica(datos=persona, identificativos=hoja_excel)
                         elif t == "resolc":
@@ -2096,7 +2097,7 @@ def main():
                     ):
                         # generar_documento(datos=persona, identificativos=hoja_excel)
                         if t == "des":
-                            generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.OT23000000")
+                            generar_skills(datos=persona, identificativos=hoja_excel, partida="G01090205GE00000.422C00.22699 fons OT23000000")
                         elif t == "cer":
                             generar_skills_certifica(datos=persona, identificativos=hoja_excel)
                         elif t == "resolc":
