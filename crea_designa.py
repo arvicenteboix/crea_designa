@@ -792,7 +792,7 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
 
         designa_text = (
             f"Vist l'informe del cap de servei del {fecha}, corresponent a la formació {codigo} - {curso} "
-            f"realitzat {modalidad_text} del {fechas}.\n"
+            f"realitzada {modalidad_text} del {fechas}.\n"
             f"Vist que els professors han realitzat en els termes establits i de manera adequada la labor "
             f"per a la qual van ser designats."
         )
@@ -816,7 +816,7 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
             modalidad_text = f"presencial a {modalidad}"
         designa_text = (
             f"Vist l'informe de la {carrec} del {fecha}, corresponent a la formació {codigo} - {curso} "
-            f"realitzat {modalidad_text} del {fechas}.\n"
+            f"realitzada {modalidad_text} del {fechas}.\n"
             f"Vist que els professors han realitzat en els termes establits i de manera adequada la labor "
             f"per a la qual van ser designats."
         )
@@ -1997,6 +1997,7 @@ def main():
             y = int((screen_height / 2) - (window_height / 2))
             fecha_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
+            tk.Label(fecha_window, text=nombre, font=("Arial", 13, "bold")).pack(pady=5)
             tk.Label(fecha_window, text="Selecciona la fecha para la resolución:").pack(pady=10)
 
             fecha_entry = DateEntry(fecha_window, date_pattern='dd/mm/yyyy')
