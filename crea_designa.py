@@ -813,7 +813,7 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
         if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
             modalidad_text = f"de forma {modalidad_lower}"
         else:
-            modalidad_text = f"presencial a {modalidad}"
+            modalidad_text = f"presencial"
         designa_text = (
             f"Vist l'informe de la {carrec} del {fecha}, corresponent a la formació {codigo} - {curso} "
             f"realitzada {modalidad_text} del {fechas}.\n"
@@ -1063,7 +1063,7 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
         if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
             modalidad_text = f"de forma {modalidad_lower}"
         else:
-            modalidad_text = f"presencial a {modalidad}"
+            modalidad_text = f"presencial"
         designa_text = (
             f"Que el personal docent que es relaciona a continuació ha format part com a personal col·laborador per "
             f"a formar part de l'equip docent que van ser anomenats per resolució de la Direcció General de "
@@ -1086,7 +1086,7 @@ def generar_skills_certifica(datos, identificativos, numero_a_letras=lambda x:st
         if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
             modalidad_text = f"de forma {modalidad_lower}"
         else:
-            modalidad_text = f"presencial a {modalidad}"
+            modalidad_text = f"presencial"
         designa_text = (
             f"Que el personal que es relaciona a continuació ha format part com a personal col·laborador per "
             f"a formar part de l'equip docent que van ser anomenats per resolució de la Direcció General de "
