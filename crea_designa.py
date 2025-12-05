@@ -22,7 +22,7 @@ from tkinter import ttk
 
 from tkcalendar import DateEntry
 
-version = "v1.0.9alpha"
+version = "v1.0.9"
 
 
 # from docx2pdf import convert
@@ -540,7 +540,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
         if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
             modalidad_text = f"de forma {modalidad_lower}"
         else:
-            modalidad_text = f"presencial a {modalidad}"
+            modalidad_text = f"presencial"
         designa_text = (
             f"1. Designar el personal docent que a continuació es relaciona com a formadors, "
             f"per a formar part de l’equip docent que impartirà la formació {codigo} - {curso}, "
@@ -562,7 +562,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
         if "online" in modalidad_lower or "on line" in modalidad_lower or "semipresencial" in modalidad_lower:
             modalidad_text = f"de forma {modalidad_lower}"
         else:
-            modalidad_text = f"presencial a {modalidad}"
+            modalidad_text = f"presencial"
         designa_text = (
             f"1. Designar a les persones que a continuació es relaciona com a formadors, "
             f"per a formar part de l’equip que impartirà la formació {codigo} - {curso}, "
@@ -1352,13 +1352,13 @@ def minuta_skills(datos, identificativos, parent=None):
     entry_vars = []  # Para recolectar luego
 
     # Campos por persona
-    for idx, persona in enumerate(personas, 1):
+    for idx, persona in enumerate(personas, start=1):
         # Solo procesar si todos los movimientos son 'minuta'
         movs = persona.get('Movimientos', [])
         if not all(
-            str(mov.get('MINUTA / DIETA / FACTURA/ MATERIAL', '')).strip().lower() == 'minuta'
+            str(mov.get('MINUTA / DIETA / FACTURA/ MATERIAL', '')).strip().lower() == 'minuta' or str(mov.get('MINUTA / DIETA / FACTURA/ MATERIAL', '')).strip().lower() == 'caso-actividad'
             for mov in movs
-        ):
+        ):          
             continue
         movs = persona.get("Movimientos", [])
         total = round(sum(to_float(mov.get('IMPORTE / IMPORT (€)', 0)) for mov in movs), 2)
@@ -1997,7 +1997,7 @@ def main():
             y = int((screen_height / 2) - (window_height / 2))
             fecha_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-            tk.Label(fecha_window, text=nombre, font=("Arial", 13, "bold")).pack(pady=5)
+            tk.Label(fecha_window, text=nombre, font=("Arial", 11, "bold")).pack(pady=5)
             tk.Label(fecha_window, text="Selecciona la fecha para la resolución:").pack(pady=10)
 
             fecha_entry = DateEntry(fecha_window, date_pattern='dd/mm/yyyy')
@@ -2011,9 +2011,12 @@ def main():
             carrec_entry = tk.Entry(fecha_window, width=30)
             carrec_entry.pack(pady=5)
 
-            confirmar_btn = tk.Button(fecha_window, text="Confirmar", command=lambda: confirmar_fecha())
-            confirmar_btn.pack(pady=10)
-            tk.Button(fecha_window, text="Cancelar", command=fecha_window.destroy).pack(pady=5)
+            btn_frame = tk.Frame(fecha_window)
+            btn_frame.pack(pady=10)
+            
+            confirmar_btn = tk.Button(btn_frame, text="Confirmar", command=lambda: confirmar_fecha())
+            confirmar_btn.pack(side="left", padx=5)
+            tk.Button(btn_frame, text="Cancelar", command=fecha_window.destroy).pack(side="left", padx=5)
             
 
 
@@ -2073,9 +2076,9 @@ def main():
                         elif t == "cer":
                             generar_skills_certifica(datos=persona, identificativos=hoja_excel)
                         elif t == "resolc":
-                            crea_ventana_fechas(mov.get('Nombre', ''))
+                            crea_ventana_fechas(persona.get('Nombre', ''))
                             fecha_window.wait_window()
-                            generar_skills_resolc(datos=persona, identificativos=hoja_excel, fecha=fecha, centre_educatiu=centre_educatiu, carrec=carrec, partida="G01090205GE00000.422C00.TE22000053")
+                            generar_skills_resolc(datos=persona, identificativos=hoja_excel, fecha=fecha, centre_educatiu=centre_educatiu, carrec=carrec, partida="G01090205GE00000.422C00.22699 fons TE22000053")
                     status_label.config(text="¡Proceso completado!")
                 status_label.config(text="¡Proceso completado!")
                 return
@@ -2102,9 +2105,9 @@ def main():
                         elif t == "cer":
                             generar_skills_certifica(datos=persona, identificativos=hoja_excel)
                         elif t == "resolc":
-                            crea_ventana_fechas(mov.get('Nombre', ''))
+                            crea_ventana_fechas(persona.get('Nombre', ''))
                             fecha_window.wait_window()
-                            generar_skills_resolc(datos=persona, identificativos=hoja_excel, fecha=fecha,  centre_educatiu=centre_educatiu, carrec=carrec,partida="G01090205GE00000.422C00.OT23000000")
+                            generar_skills_resolc(datos=persona, identificativos=hoja_excel, fecha=fecha,  centre_educatiu=centre_educatiu, carrec=carrec,partida="G01090205GE00000.422C00.22699 fons OT23000000")
                 status_label.config(text="¡Proceso completado!")
                 return
                   # Salir después de generar designas si no está seleccionado skills
