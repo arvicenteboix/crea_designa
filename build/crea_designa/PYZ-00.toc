@@ -1109,6 +1109,7 @@
   ('et_xmlfile.xmlfile',
    'C:\\Users\\alfredo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\et_xmlfile\\xmlfile.py',
    'PYMODULE'),
+  ('externo', 'D:\\Repos\\APLICACIONS_EXTRA_DOC_excel\\externo.py', 'PYMODULE'),
   ('fileinput',
    'C:\\Users\\alfredo\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\fileinput.py',
    'PYMODULE'),

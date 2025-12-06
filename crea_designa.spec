@@ -5,7 +5,7 @@ a = Analysis(
     ['crea_designa.py'],
     pathex=[],
     binaries=[],
-    datas=[('a.png', '.'), ('b.png', '.'), ('c.png', '.')],
+    datas=[('a.png', '.'), ('b.png', '.'), ('c.png', '.'), ('ico.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

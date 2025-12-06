@@ -19,10 +19,11 @@ from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 import sys
 from tkinter import ttk
+from externo import check_version
 
 from tkcalendar import DateEntry
 
-version = "v1.0.9"
+version = "v1.0.10"
 
 
 # from docx2pdf import convert
@@ -793,8 +794,16 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
         designa_text = (
             f"Vist l'informe del cap de servei del {fecha}, corresponent a la formació {codigo} - {curso} "
             f"realitzada {modalidad_text} del {fechas}.\n"
-            f"Vist que els professors han realitzat en els termes establits i de manera adequada la labor "
+            f"Vist que els col·laboradors externs han realitzat en els termes establits i de manera adequada la labor "
             f"per a la qual van ser designats."
+        )
+
+        texto = (
+            f"Que ordene el pagament als col·laboradors externs relacionats a continuació, "   
+            f"l'import total de {importe_total} €, amb la distribució indicada, per actuar com a "
+            f"col·laboradors en l'activitat de formació {codigo} - {curso}, per actuar fora de l'horari normal de treball i amb càrrec a "
+            f"l'aplicació pressupostària {partida}, de conformitat amb el DECRET 80/2025, de 3 de juny, del Consell "
+            f"sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris."
         )
 
     else:
@@ -815,10 +824,18 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
         else:
             modalidad_text = f"presencial"
         designa_text = (
-            f"Vist l'informe de la {carrec} del {fecha}, corresponent a la formació {codigo} - {curso} "
+            f"Vist l'informe del cap de servei del {fecha}, corresponent a la formació {codigo} - {curso} "
             f"realitzada {modalidad_text} del {fechas}.\n"
-            f"Vist que els professors han realitzat en els termes establits i de manera adequada la labor "
+            f"Vist que els professors de la formació han realitzat en els termes establits i de manera adequada la labor "
             f"per a la qual van ser designats."
+        )
+
+        texto = (
+            f"Que ordene el pagament a les persones relacionades a continuació, "   
+            f"l'import total de {importe_total} €, amb la distribució indicada, per actuar com a "
+            f"col·laboradors en l'activitat de formació {codigo} - {curso} amb càrrec a "
+            f"l'aplicació pressupostària {partida}, de conformitat amb el DECRET 80/2025, de 3 de juny, del Consell "
+            f"sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris."
         )
 
     p1 = doc.add_paragraph(designa_text)
@@ -832,13 +849,8 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
     # TABLA CENTRAL
     movimientos = datos['Movimientos']
     importe_total = sum(float(mov.get('IMPORTE / IMPORT (€)', 0) or 0) for mov in movimientos)
-    texto = (
-    f"Que ordene el pagament als professors relacionats a continuació, "   
-    f"l'import total de {importe_total} €, amb la distribució indicada, per actuar com a "
-    f"col·laboradors en l'activitat de formació {codigo} - {curso}, per actuar fora de l'horari normal de treball i amb càrrec a "
-    f"l'aplicació pressupostària {partida}, de conformitat amb el DECRET 80/2025, de 3 de juny, del Consell"
-    f"sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris."
-    )
+
+    
 
     p = doc.add_paragraph(texto)
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -1945,6 +1957,8 @@ def main():
     global root
     root = tk.Tk()
     root.title("GENERA DESIGNAS")
+    icon_path = resource_path('ico.ico')
+    root.iconbitmap(icon_path)
     # Centrar la ventana en la pantalla
     window_width = 400
     window_height = 350
@@ -1998,7 +2012,7 @@ def main():
             fecha_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
             tk.Label(fecha_window, text=nombre, font=("Arial", 11, "bold")).pack(pady=5)
-            tk.Label(fecha_window, text="Selecciona la fecha para la resolución:").pack(pady=10)
+            tk.Label(fecha_window, text="Fecha del informe del jefe de servicio:").pack(pady=10)
 
             fecha_entry = DateEntry(fecha_window, date_pattern='dd/mm/yyyy')
             fecha_entry.pack(pady=5)
@@ -2172,7 +2186,7 @@ def main():
 
     version_label = tk.Label(root, text=version, font=("Arial", 10), fg="gray")
     version_label.place(relx=1.0, rely=1.0, anchor='se', x=-5, y=-5)
-
+    check_version(root, version, icon_path)
 
     root.mainloop()
 

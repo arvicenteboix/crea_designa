@@ -1,6 +1,5 @@
 pyinstaller --onefile --noconsole --add-data "a.png:." --add-data "b.png:." --icon=ico.ico crea_designa.py
 
-pyinstaller --onefile --noconsole --add-data "a.png:." --add-data "b.png:." --add-data "c.png:." --icon=ico.ico crea_designa.py
-
+pyinstaller --onefile --noconsole --add-data "a.png:." --add-data "b.png:." --add-data "c.png:." --add-data "ico.ico:." --icon=ico.ico crea_designa.py
 git tag v1.0.9 
 git push origin --tags
