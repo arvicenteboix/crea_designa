@@ -848,6 +848,7 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
 
     # TABLA CENTRAL
     movimientos = datos['Movimientos']
+    global importe_total
     importe_total = sum(float(mov.get('IMPORTE / IMPORT (€)', 0) or 0) for mov in movimientos)
 
     
