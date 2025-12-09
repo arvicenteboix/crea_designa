@@ -23,7 +23,7 @@ from externo import check_version
 
 from tkcalendar import DateEntry
 
-version = "v1.0.10"
+version = "v1.0.11"
 
 
 # from docx2pdf import convert
@@ -777,11 +777,12 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
 
     fechas = identificativos.get('FECHAS REALIZACIÓN / DATES REALITZACIÓ', '')
     modalidad = identificativos.get('MODALIDAD/MODALITAT', '')
-
+    movimientos = datos['Movimientos']
+    importe_total = sum(float(mov.get('IMPORTE / IMPORT (€)', 0) or 0) for mov in movimientos)
 
 
     # Determinar si es funcionario GVA
-    movimientos = datos['Movimientos']
+    
     juridico = str(movimientos[0].get('JURÍDICO', '')).strip().lower()
     if juridico == "funcionario gva":
         # Si modalidad contiene "online" o "on line" (ignorando mayúsculas/minúsculas), poner "de forma online", si no, poner "presencial a"
@@ -848,10 +849,8 @@ def generar_skills_resolc(datos, identificativos, partida, fecha, centre_educati
 
     # TABLA CENTRAL
     movimientos = datos['Movimientos']
-    global importe_total
-    importe_total = sum(float(mov.get('IMPORTE / IMPORT (€)', 0) or 0) for mov in movimientos)
 
-    
+    importe_total = sum(float(mov.get('IMPORTE / IMPORT (€)', 0) or 0) for mov in movimientos)
 
     p = doc.add_paragraph(texto)
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
