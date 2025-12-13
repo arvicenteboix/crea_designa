@@ -1880,7 +1880,7 @@ def crea_minuta_skills_docx(dades, identificativos):
         errores = {}
 
         # Solo texto (letras y espacios)
-        solo_texto = lambda s: bool(re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]+", s.strip()))
+        solo_texto = lambda s: bool(re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñÜüàèòÀÈÒ\s]+", s.strip()))
         # NIF: 8 números y 1 letra al final
         nif_valido = lambda s: bool(re.fullmatch(r"\d{8}[A-Za-z]", s.strip()))
         # CP: 5 cifras
@@ -1894,7 +1894,7 @@ def crea_minuta_skills_docx(dades, identificativos):
         # Teléfono: 9 cifras
         telefono_valido = lambda s: bool(re.fullmatch(r"\d{9}", s.strip()))
         # Texto y números (alfanumérico con espacios)
-        texto_numeros = lambda s: bool(re.fullmatch(r"[A-Za-z0-9ÁÉÍÓÚáéíóúÑñÜü\s\-\.\,\;\:\(\)\[\]\{\}\¿\?\¡\!\@\#\$\%\&\*\_\+\=\/\\\|\~]+", s.strip()))
+        texto_numeros = lambda s: bool(re.fullmatch(r"[A-Za-z0-9ÁÉÍÓÚáéíóúÑñÜüàèòÀÈÒ\s\-\.\,\;\:\(\)\[\]\{\}\¿\?\¡\!\@\#\$\%\&\*\_\+\=\/\\\|\~]+", s.strip()))
 
 
 
