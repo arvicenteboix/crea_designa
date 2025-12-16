@@ -23,7 +23,7 @@ from externo import check_version
 
 from tkcalendar import DateEntry
 
-version = "v1.0.11"
+version = "v1.0.12"
 
 
 # from docx2pdf import convert
