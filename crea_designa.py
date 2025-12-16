@@ -20,6 +20,7 @@ from docx.oxml.ns import nsdecls
 import sys
 from tkinter import ttk
 from externo import check_version
+import webbrowser
 
 from tkcalendar import DateEntry
 
@@ -92,8 +93,8 @@ def normaliza_fechas_realizacion(fecha_str):
                 else:
                     # No se reconoce el formato, mostrar error y devolver cadena vacía
                     messagebox.showerror(
-                        "Error en formato de fechas",
-                        "Las fechas no están bien, deben seguir el formato DD/MM/AA al DD/MM/AA"
+                        "Error en format de dates",
+                        "Les dates no estan bé, han de seguir el format DD/MM/AA al DD/MM/AA"
                     )
                     return -1
     # Formatear fechas a DD/MM/AA
@@ -107,6 +108,30 @@ def normaliza_fechas_realizacion(fecha_str):
                 return dt.strftime("%d/%m/%y")
             except Exception:
                 return f
+    
+    # Comprobar la duración de las fechas
+
+    # Normalizar formato antes de parsear
+    try:
+        fecha1 = datetime.strptime(f1, "%d/%m/%Y")
+    except ValueError:
+        fecha1 = datetime.strptime(f1, "%d/%m/%y")
+    
+    try:
+        fecha2 = datetime.strptime(f2, "%d/%m/%Y")
+    except ValueError:
+        fecha2 = datetime.strptime(f2, "%d/%m/%y")
+    duration = (fecha2 - fecha1).days
+
+    
+    if duration < 5:
+        respuesta = messagebox.askyesno(
+            "Avís",
+            f"La duració és de {duration} dies, que és menys de 5 dies. Desitja continuar?"
+        )
+        if not respuesta:
+            return -1
+    
     return f"{corta_fecha(f1)} al {corta_fecha(f2)}"
 
 def extraer_datos_identificativos(nombre_archivo):
@@ -130,6 +155,20 @@ def extraer_datos_identificativos(nombre_archivo):
                         return -1
                 resultado[etiqueta] = valor
     #print(json.dumps(resultado, ensure_ascii=False, indent=2))
+
+    # Validar formato del código de edición
+    codigo = resultado.get('CÓDIGO EDICIÓN / CODI EDICIÓ', '')
+    if codigo:
+        # Formato esperado: 25/26/27 + FP + 2 números + 2 letras + 3 números
+        if not re.match(r'^(25|26|27)FP\d{2}[A-Z]{2}\d{3}$', codigo):
+            messagebox.showerror(
+                "Error en format de codi",
+                f"El codi d'edició '{codigo}' no compleix el format esperat.\n\n"
+                f"Format requerit: 26FP##LL###\n"
+                f"Exemple: 26FP43CF123"
+            )
+            return -1
+
     return resultado
 
 # Ejemplo de uso:
@@ -137,7 +176,7 @@ def extraer_datos_identificativos(nombre_archivo):
 
 
 def process_excel(nombre_archivo, status_label):
-    status_label.config(text="Procesando archivo Excel...")
+    status_label.config(text="Processant arxiu Excel...")
     xl = pd.ExcelFile(nombre_archivo)
     hoja = xl.sheet_names[0]
     df = xl.parse(hoja, header=None)
@@ -703,7 +742,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
         f"{importe_total} € en concepte de " +
         " i ".join(set(conceptos_valenciano)) +
         ", per la seua participació en l’activitat esmentada i per actuar fora de l’horari normal de treball. "
-        f"Este import s’abonarà d’acord amb el Decret 24/1997, d’11 de febrer, i les seues modificacions posteriors, sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris, amb càrrec a l’aplicació pressupostària {partida}, del pressupost de la Generalitat Valenciana per a l’any 2025."
+        f"Este import s’abonarà d’acord amb el Decret 24/1997, d’11 de febrer, i les seues modificacions posteriors, sobre indemnitzacions per raó del servei i gratificacions per serveis extraordinaris, amb càrrec a l’aplicació pressupostària {partida}, del pressupost de la Generalitat Valenciana per a l’any 2026."
     )
 
     doc.add_paragraph(
@@ -1412,7 +1451,7 @@ def minuta_skills(datos, identificativos, parent=None):
             e = tk.Entry(lf, textvariable=vars_map[label], width=40)
             e.grid(row=r, column=c + 1, sticky="w", padx=5, pady=4)
             if label == "Relacio_juridica":
-                combo = ttk.Combobox(lf, textvariable=vars_map[label], values=["FI", "FC"], state="readonly", width=37)
+                combo = ttk.Combobox(lf, textvariable=vars_map[label], values=["FI", "FC", "NF"], state="readonly", width=37)
                 combo.grid(row=r, column=c + 1, sticky="w", padx=5, pady=4)
             if label == "Nivell":
                 combo = ttk.Combobox(lf, textvariable=vars_map[label], values=["A26", "A24", "No aplica"], state="readonly", width=37)
@@ -1943,7 +1982,7 @@ def crea_minuta_skills_docx(dades, identificativos):
                 if val:
                     if val != "":
                         errores_text += f"Error en {key}: {val}\n"
-            messagebox.showwarning(f"Validación de datos en {dato.get('Nombre', '')} \n", f"Errores de validación:\n\n{errores_text}\nPor favor, corrígelos antes de generar el documento.")
+            messagebox.showwarning(f"Validació de dades en {dato.get('Nombre', '')} \n", f"Errors de validació:\n\n{errores_text}\nPer favor, corregix abans de generar el document.")
             break
         else:
             crea_docx(dato)
@@ -1956,19 +1995,19 @@ def main():
     # global convertir_pdf_var
     global root
     root = tk.Tk()
-    root.title("GENERA DESIGNAS")
+    root.title("GENERA DESIGNES")
     icon_path = resource_path('ico.ico')
     root.iconbitmap(icon_path)
     # Centrar la ventana en la pantalla
     window_width = 400
-    window_height = 350
+    window_height = 300
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = int((screen_width / 2) - (window_width / 2))
     y = int((screen_height / 2) - (window_height / 2))
     root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-    status_label = tk.Label(root, text="Haz clic para procesar", fg="blue", font=("Arial", 12))
+    status_label = tk.Label(root, text="Fes clic per a processar", fg="blue", font=("Arial", 12))
     status_label.pack(pady=10)
 
     # convertir_pdf_var = tk.BooleanVar()
@@ -1978,11 +2017,13 @@ def main():
     es_skills = tk.BooleanVar()
     global es_erasmus
     es_erasmus = tk.BooleanVar()
+    es_skills.set(True)
+    es_erasmus.set(False)
 
-    chk_es_skills = tk.Checkbutton(root, text="Es Skills", variable=es_skills)
-    chk_es_skills.pack(pady=5)
-    chk_es_erasmus = tk.Checkbutton(root, text="Es fons ERASMUS", variable=es_erasmus)
-    chk_es_erasmus.pack(pady=5)
+    # chk_es_skills = tk.Checkbutton(root, text="Es Skills", variable=es_skills)
+    # chk_es_skills.pack(pady=5)
+    # chk_es_erasmus = tk.Checkbutton(root, text="Es fons ERASMUS", variable=es_erasmus)
+    # chk_es_erasmus.pack(pady=5)
     '''
     ON PROCESS PRINCIPAL
     '''
@@ -2000,7 +2041,7 @@ def main():
         def crea_ventana_fechas(nombre):
             nonlocal fecha_window, fecha, centre_educatiu, carrec
             fecha_window = tk.Toplevel(parent)
-            fecha_window.title("Seleccionar fecha")
+            fecha_window.title("Seleccionar data")
 
             # Centrar la ventana en la pantalla
             window_width = 300
@@ -2012,7 +2053,7 @@ def main():
             fecha_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
             tk.Label(fecha_window, text=nombre, font=("Arial", 11, "bold")).pack(pady=5)
-            tk.Label(fecha_window, text="Fecha del informe del jefe de servicio:").pack(pady=10)
+            tk.Label(fecha_window, text="Fecha del informe del cap de servei:").pack(pady=10)
 
             fecha_entry = DateEntry(fecha_window, date_pattern='dd/mm/yyyy')
             fecha_entry.pack(pady=5)
@@ -2023,6 +2064,7 @@ def main():
 
             tk.Label(fecha_window, text="Càrrec:").pack(pady=5)
             carrec_entry = tk.Entry(fecha_window, width=30)
+            carrec_entry.insert(0, "Professor")
             carrec_entry.pack(pady=5)
 
             btn_frame = tk.Frame(fecha_window)
@@ -2030,7 +2072,7 @@ def main():
             
             confirmar_btn = tk.Button(btn_frame, text="Confirmar", command=lambda: confirmar_fecha())
             confirmar_btn.pack(side="left", padx=5)
-            tk.Button(btn_frame, text="Cancelar", command=fecha_window.destroy).pack(side="left", padx=5)
+            tk.Button(btn_frame, text="Cancel·lar", command=fecha_window.destroy).pack(side="left", padx=5)
             
 
 
@@ -2053,14 +2095,14 @@ def main():
         try:
             excel_file = find_excel_file(status_label)
             if not excel_file:
-                messagebox.showerror("Error", "No se encontró ningún archivo Excel en la carpeta.")
+                messagebox.showerror("Error", "No s'ha trobat cap arxiu Excel a la carpeta.")
                 return
             json_data = process_excel(excel_file, status_label)
 
             hoja_excel = extraer_datos_identificativos(excel_file)
 
             if hoja_excel == -1:
-                status_label.config(text="Error en los datos identificativos. Revisa las fechas.")
+                status_label.config(text="Error en les dades identificatives. Revisa les dates.")
                 return
 
             #show_json(hoja_excel)
@@ -2093,8 +2135,8 @@ def main():
                             crea_ventana_fechas(persona.get('Nombre', ''))
                             fecha_window.wait_window()
                             generar_skills_resolc(datos=persona, identificativos=hoja_excel, fecha=fecha, centre_educatiu=centre_educatiu, carrec=carrec, partida="G01090205GE00000.422C00.22699 fons TE22000053")
-                    status_label.config(text="¡Proceso completado!")
-                status_label.config(text="¡Proceso completado!")
+                    status_label.config(text="Procés completat!")
+                status_label.config(text="Procés completat!")
                 return
                   # Salir después de generar skills si está seleccionado
             elif es_erasmus.get():
@@ -2170,15 +2212,27 @@ def main():
             '''
 
             # show_json(json_data)
-            messagebox.showerror("Error", "Ninguna opción seleccionada.")
+            messagebox.showerror("Error", "Ninguna opció seleccionada.")
         except Exception as e:
             status_label.config(text=f"Error: {e}")
-            messagebox.showerror("Error", f"Error procesando el archivo: {e}")
+            messagebox.showerror("Error", f"Error processant l'archivo: {e}")
 
-    btn = tk.Button(root, text="Genera Designas", command=lambda: on_process("des"), font=("Arial", 12))
-    btn2 = tk.Button(root, text="Genera Certifica", command=lambda: on_process("cer"), font=("Arial", 12))
-    btn3 = tk.Button(root, text="Genera Minuta DGFP", command=lambda: on_process("min", root), font=("Arial", 12))
-    btn4 = tk.Button(root, text="Genera Resolc DGFP", command=lambda: on_process("resolc", root), font=("Arial", 12))
+    def abrir_banner():
+        webbrowser.open("https://cefirefp.github.io/docs/apps/baner/proves.html")
+
+    menubar = tk.Menu(root)
+     
+    banner_menu = tk.Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="Banner", menu=banner_menu)
+    banner_menu.add_command(label="Mostrar App Banner", command=lambda: abrir_banner())
+    banner_menu.add_separator()
+    banner_menu.add_command(label="Sortir", command=root.quit)
+    root.config(menu=menubar)
+
+    btn = tk.Button(root, text="Genera Designes", command=lambda: on_process("des"), font=("Arial", 12), width=20)
+    btn2 = tk.Button(root, text="Genera Certifica", command=lambda: on_process("cer"), font=("Arial", 12), width=20)
+    btn3 = tk.Button(root, text="Genera Minuta DGFP", command=lambda: on_process("min", root), font=("Arial", 12), width=20)
+    btn4 = tk.Button(root, text="Genera Resolc DGFP", command=lambda: on_process("resolc", root), font=("Arial", 12), width=20)
     btn.pack(pady=10)
     btn2.pack(pady=10)
     btn3.pack(pady=10)

@@ -3,3 +3,11 @@ pyinstaller --onefile --noconsole --add-data "a.png:." --add-data "b.png:." --ic
 pyinstaller --onefile --noconsole --add-data "a.png:." --add-data "b.png:." --add-data "c.png:." --add-data "ico.ico:." --icon=ico.ico crea_designa.py
 git tag v1.0.12
 git push origin --tags
+
+
+signtool sign ^
+  /fd SHA256 ^
+  /n "CEFIRE FP" ^
+  /tr http://timestamp.digicert.com ^
+  /td SHA256 ^
+  "crea_designa.exe"

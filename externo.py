@@ -12,7 +12,7 @@ def check_version(ventana, version, icon_path):
     except:
         ventana_actualizacion = tk.Toplevel()
         ventana_actualizacion.iconbitmap(icon_path)
-        ventana_actualizacion.title("Error de actualización")
+        ventana_actualizacion.title("Error d'actualització")
         ventana_actualizacion.geometry("350x180")
         ventana_actualizacion.resizable(False, False)
         ventana_actualizacion.transient(ventana)  # La ventana de error está por encima de la principal
@@ -21,8 +21,8 @@ def check_version(ventana, version, icon_path):
 
         label = tk.Label(
             ventana_actualizacion,
-            text="No se pudo verificar si hay actualizaciones disponibles.\n\n"
-             "Por favor, consulta la página del proyecto de vez en cuando:\n"
+            text="No s'ha pogut verificar si hi ha actualitzacions disponibles.\n\n"
+             "Per favor, consulta la pàgina del projecte de tant en tant:\n"
              "https://github.com/arvicenteboix/crea_designa/releases",
             wraplength=320,
             justify="left"
@@ -34,7 +34,8 @@ def check_version(ventana, version, icon_path):
 
         boton_enlace = tk.Button(
             ventana_actualizacion,
-            text="Abrir página del proyecto",
+            text="Obrir pàgina de descàrregues",
+            width=20,
             command=abrir_enlace,
             bg="#007bff",
             fg="white",
@@ -47,7 +48,7 @@ def check_version(ventana, version, icon_path):
 
         boton_cerrar = tk.Button(
             ventana_actualizacion,
-            text="Cerrar",
+            text="Tancar",
             command=ventana_actualizacion.destroy,
             font=("Arial", 10),
             relief="flat",
@@ -66,7 +67,7 @@ def check_version(ventana, version, icon_path):
 
         ventana_actualizacion = tk.Toplevel()
         ventana_actualizacion.iconbitmap(icon_path)
-        ventana_actualizacion.title("Actualización disponible")
+        ventana_actualizacion.title("Actualització disponible")
         ventana_actualizacion.geometry("350x230")
         ventana_actualizacion.resizable(False, False)
         ventana_actualizacion.transient(ventana)  # La ventana de actualización está por encima de la principal
@@ -75,7 +76,7 @@ def check_version(ventana, version, icon_path):
  
         label = tk.Label(
             ventana_actualizacion,
-            text=f"Hay una nueva versión disponible: {latest_release}. Tienes {version}.\n\nVisita el repositorio para descargarla. Es importante que mantengas el programa actualizado para asegurar que la documentación generada cumple con las normativas vigentes.",
+            text=f"Hi ha una nova versió disponible: {latest_release}. Tens {version}.\n\nVisita el repositori per descarregar-la. És important que mantingues el programa actualitzat per assegurar que la documentació generada compleix amb les normatives vigents.",
             wraplength=320,
             justify="left"
         )
@@ -83,7 +84,7 @@ def check_version(ventana, version, icon_path):
 
         boton_enlace = tk.Button(
             ventana_actualizacion,
-            text="Abrir página de descargas",
+            text="Obrir pàgina de descàrregues",
             command=abrir_enlace,
             bg="#007bff",
             fg="white",
