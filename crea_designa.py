@@ -24,7 +24,7 @@ import webbrowser
 
 from tkcalendar import DateEntry
 
-version = "v1.0.12"
+version = "v1.0.13"
 
 
 # from docx2pdf import convert
@@ -553,7 +553,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
     # Encabezado de autoridad
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.add_run("\nMarta Armendia Santos, directora general de Formació Professional, de la Conselleria d’Educació, Cultura, Universitats i Ocupació\n").bold = True
+    p.add_run("\nMarta Armendia Santos, directora general de Formació Professional, de la Conselleria d’Educació, Cultura i Universitats\n").bold = True
 
     # RESOLUCIÓN
     p_resolc = doc.add_paragraph()
@@ -758,7 +758,7 @@ def generar_skills(datos, identificativos, partida, numero_a_letras=lambda x:str
 
     p_firma = doc.add_paragraph()
     p_firma.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_firma.add_run("Marta Armendia Santos\nDirectora General de Formació Professional, de la Conselleria d’Educació, Cultura, Universitats i Ocupació")
+    p_firma.add_run("Marta Armendia Santos\nDirectora General de Formació Professional, de la Conselleria d’Educació, Cultura i Universitats")
 
     # Nombre de archivo y guardado
     doc_name = f"{codigo}_DESIGNA_{datos['Nombre'].replace(' ', '_')}.docx"
@@ -1871,7 +1871,7 @@ def crea_minuta_skills_docx(dades, identificativos):
         footer = doc.sections[0].footer
         footer_paragraph = footer.add_paragraph()
         footer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = footer_paragraph.add_run("CONSELLERIA D'EDUCACIÓ, CULTURA, UNIVERSITATS I OCUPACIÓ\n")
+        run = footer_paragraph.add_run("CONSELLERIA D'EDUCACIÓ, CULTURA I UNIVERSITATS\n")
         run.font.size = Pt(7)
         run = footer_paragraph.add_run("Av. Campanar, 32. 46015 - València. CIF S4611001A\n")
         run.font.size = Pt(7)
